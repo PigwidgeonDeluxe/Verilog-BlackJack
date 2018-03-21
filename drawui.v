@@ -1,6 +1,7 @@
 
 
-module drawui (CLOCK_50,						//	On Board 50 MHz
+module drawui (character, // input character value
+		CLOCK_50,						//	On Board 50 MHz
 		// Your inputs and outputs here
         KEY,
         SW,
@@ -15,7 +16,7 @@ module drawui (CLOCK_50,						//	On Board 50 MHz
 		VGA_B,   						//	VGA Blue[9:0]
 		
 		);
-
+	input 	[4:0] character; // 5bit character value, reference table below
 	input			CLOCK_50;				//	50 MHz
 	input   [9:0]   SW;
 	input   [3:0]   KEY;
@@ -31,12 +32,12 @@ module drawui (CLOCK_50,						//	On Board 50 MHz
 	output	[9:0]	VGA_G;	 				//	VGA Green[9:0]
 	output	[9:0]	VGA_B;   				//	VGA Blue[9:0]
 
-	// Create the colour, x, y and writeEn wires that are inputs to the controller.
+	// Create the colour, x, y wires that are inputs to the controller.
 	wire [2:0] colour;
 	wire [7:0] x;
 	wire [6:0] y;
-	wire writeEn;
-	
+
+	// the vga module
 	vga_adapter VGA(
 			.resetn(1'b1),
 			.clock(CLOCK_50),
@@ -61,96 +62,231 @@ module drawui (CLOCK_50,						//	On Board 50 MHz
 	 
 	 
 	/// declare all cases' local parameter names and values
-	localparam DRAW_LSCORE_1 = 6'b000000,
-		DRAW_LSCORE_2 = 6'b000001,	// draws the static GUI: P1, P2, Card outlines, T:
-		DRAW_CARD_INFO = 6'b000010, // draws the card's suit and value
-		RESET_CARD_INFO = 6'b000011, // resets the card interior to blank so that it may be redrawn ie transition
-		DRAW_P1_SCORE = 6'b000100, // draws the score for P1
-		RESET_P1_SCORE = 6'b000101, // resets the scores to blank so that it may be redrawn ie transition
-		DRAW_P2_SCORE = 6'b000110, // draws the score for P2
-		RESET_P2_SCORE = 6'b000111, // resets the scores to blank so that it may be redrawn ie transition
-		DRAW_HAND1 = 6'b001000, // draws the total values in hand for p1
-		RESET_HAND1 = 6'b001001, // resets the total values in hand for p1
-		DRAW_HAND2 = 6'b001010, // draws the total values in hand for p2
-		RESET_HAND2 = 6'b001011, // resets the total values in hand for p2
-		DRAW_RESULT = 6'b001100, // draws the end game result ie who won
-		RESET_RESULT = 6'b001101; // resets the end game result ie who won
-		
-	/*
-	// testing
-	reg [31:0] countseconds;
-	reg [7:0] testcountx;
-	reg [4:0]testcharacter;
+	localparam DRAW_LSCORE_1 = 6'b000000, // left score digit 1 (from left)
+		RESET_LSCORE_1 = 6'b000001,
+		DRAW_LSCORE_2 = 6'b000010, // left score digit 2
+		RESET_LSCORE_2 = 6'b000011, 
+		DRAW_LSCORE_3 = 6'b000100, // left score digit3
+		RESET_LSCORE_3 = 6'b000101, 
+		DRAW_RSCORE_1 = 6'b000110, // right score digit 1
+		RESET_RSCORE_1 = 6'b000111,
+		DRAW_RSCORE_2 = 6'b001000, // right score digit 2
+		RESET_RSCORE_2 = 6'b001001, 
+		DRAW_RSCORE_3 = 6'b001010, // right score digit 3
+		RESET_RSCORE_3 = 6'b001011, 
+		DRAW_LCARD_1 = 6'b001100, // left card digit 1 (from left)
+		RESET_LCARD_1 = 6'b001101, 
+		DRAW_LCARD_2 = 6'b001110, // left card digit 2
+		RESET_LCARD_2 = 6'b001111,
+		DRAW_RCARD_1 = 6'b010000, // right card ''
+		RESET_RCARD_1 = 6'b010001, 
+		DRAW_RCARD_2 = 6'b010010, // right card ''
+		RESET_RCARD_2 = 6'b010011, 
+		DRAW_LTOTAL_1 = 6'b010100, // left total digit 1 (from left)
+		RESET_LTOTAL_1 = 6'b010101, 
+		DRAW_LTOTAL_2 = 6'b010110, // left total digit 2
+		RESET_LTOTAL_2 = 6'b010111, 
+		DRAW_RTOTAL_1 = 6'b011000, // right total ''
+		RESET_RTOTAL_1 = 6'b011001, 
+		DRAW_RTOTAL_2 = 6'b011010, // right total ''
+		RESET_RTOTAL_2 = 6'b011011; 
 	
-	always@(posedge CLOCK_50)begin
-		countseconds = countseconds + 1;
-		if (countseconds == 50000)begin
-			if (testcharacter > 5'b10000)begin
-				testcharacter = 5'b00000;
-			end
-			testcountx = testcountx + 1'b1;
-			testcharacter = testcharacter + 1'b1;
-			countseconds = 0;
-		end
-		http://www.eecg.utoronto.ca/~jayar/ece241_08F/vga/vga-download.html
-	end*/
-	drawcharacter draw(.CLOCK_50(CLOCK_50),
-		.x_coord(8'b00001001), //9
-		.y_coord(8'b00001001), //9
-		.colour_in(3'b111),
-		.character(5'b00000),
-		.x_out(x),
+	reg [7:0] char_x; // character's x coordinate (top left)
+	reg [7:0] char_y; // character's y coordinate (top left)
+	reg [2:0] char_colour; // character's colour
+	//wire [4:0] character; // character value
+	
+	drawcharacter drawstuff(.CLOCK_50(CLOCK_50), // instantiate main module for drawing characters 
+		.x_coord(char_x), // input coordinate
+		.y_coord(char_y), 
+		.colour_in(char_colour),
+		.character(character),
+		.x_out(x), //output coordinate to VGA module
 		.y_out(y),
 		.colour_out(colour));
 	
 	reg [5:0] state;
 	// check for cases
-	assign state = DRAW_CARD_INFO;
+	// this one big loop that continuously draws the GUI
+	initial state = DRAW_LSCORE_1;
 	 always@(posedge CLOCK_50)
 	 begin
 		case (state)
-			DRAW_CARD_INFO: begin
-				state = RESET_CARD_INFO;
+		DRAW_LSCORE_1: begin
+				char_x = 8'b00010110; //22
+				char_y = 8'b00000111; //7
+				char_colour = 3'b111;
+				state = RESET_LSCORE_1;
 			end
-			RESET_CARD_INFO: begin
-				state = DRAW_P1_SCORE;
+		RESET_LSCORE_1: begin
+				char_x = 8'b00010110; 
+				char_y = 8'b00000111;
+				char_colour = 3'b000;
+				state = DRAW_LSCORE_2;
 			end
-			DRAW_P1_SCORE: begin
-				assign state = RESET_P1_SCORE;
+		DRAW_LSCORE_2: begin
+				char_x = 8'b00011101; //29
+				char_y = 8'b00000111;
+				char_colour = 3'b111;
+				state = RESET_LSCORE_2;
 			end
-			RESET_P1_SCORE: begin
-				assign state = DRAW_P2_SCORE;
+		RESET_LSCORE_2: begin
+				char_x = 8'b00011101;
+				char_y = 8'b00000111;
+				char_colour = 3'b000;
+				state = DRAW_LSCORE_3;
 			end
-			DRAW_P2_SCORE: begin
-				assign state = RESET_P2_SCORE;
+		DRAW_LSCORE_3: begin
+				char_x = 8'b00100100; //36
+				char_y = 8'b00000111;
+				char_colour = 3'b111;
+				state = RESET_LSCORE_3;
 			end
-			RESET_P2_SCORE: begin
-				assign state = DRAW_HAND1;
+		RESET_LSCORE_3: begin
+				char_x = 8'b00100100;
+				char_y = 8'b00000111;
+				char_colour = 3'b000;
+				state = DRAW_RSCORE_1;
 			end
-			DRAW_HAND1: begin
-				assign state = RESET_HAND1;
+		DRAW_RSCORE_1: begin
+				char_x = 8'b10001100; //140
+				char_y = 8'b00000111;
+				char_colour = 3'b111;
+				state = RESET_RSCORE_1;
 			end
-			RESET_HAND1: begin
-				assign state = DRAW_HAND2;
+		RESET_RSCORE_1: begin
+				char_x = 8'b10001100;
+				char_y = 8'b00000111;
+				char_colour = 3'b000;
+				state = DRAW_RSCORE_2;
 			end
-			DRAW_HAND2: begin
-				assign state = RESET_HAND2;
+		DRAW_RSCORE_2: begin
+				char_x = 8'b10010011; //147
+				char_y = 8'b00000111;
+				char_colour = 3'b111;
+				state = RESET_RSCORE_2;
 			end
-			RESET_HAND2: begin
-				assign state = DRAW_RESULT;
+		RESET_RSCORE_2: begin
+				char_x = 8'b10010011;
+				char_y = 8'b00000111;
+				char_colour = 3'b000;
+				state = DRAW_RSCORE_3;
 			end
-			DRAW_RESULT: begin
-				assign state = RESET_RESULT;
+		DRAW_RSCORE_3: begin
+				char_x = 8'b10011010; // 154
+				char_y = 8'b00000111;
+				char_colour = 3'b111;
+				state = RESET_RSCORE_3;
 			end
-			RESET_RESULT: begin
-				assign state = RESET_GUI;
+		RESET_RSCORE_3: begin
+				char_x = 8'b10011010;
+				char_y = 8'b00000111;
+				char_colour = 3'b000;
+				state = DRAW_LCARD_1;
 			end
-			endcase
+		DRAW_LCARD_1: begin
+				char_x = 8'b00010001; // 17
+				char_y = 8'b00110100; // 52
+				char_colour = 3'b111;
+				state = RESET_LCARD_1;
+			end
+		RESET_LCARD_1: begin
+				char_x = 8'b00010001;
+				char_y = 8'b00110100;
+				char_colour = 3'b000;
+				state = DRAW_LCARD_2;
+			end
+		DRAW_LCARD_2: begin
+				char_x = 8'b00011000; // 24
+				char_y = 8'b00110100;
+				char_colour = 3'b111;
+				state = RESET_LCARD_2;
+			end
+		RESET_LCARD_2: begin
+				char_x = 8'b00011000;
+				char_y = 8'b00110100;
+				char_colour = 3'b000;
+				state = DRAW_RCARD_1;
+			end
+		DRAW_RCARD_1: begin
+				char_x = 8'b10000011; // 131
+				char_y = 8'b00110100;
+				char_colour = 3'b111;
+				state = RESET_RCARD_1;
+			end
+		RESET_RCARD_1: begin
+				char_x = 8'b10000011;
+				char_y = 8'b00110100;
+				char_colour = 3'b000;
+				state = DRAW_RCARD_2;
+			end
+		DRAW_RCARD_2: begin
+				char_x = 8'b10001011; // 139
+				char_y = 8'b00110100;
+				char_colour = 3'b111;
+				state = RESET_RCARD_2;
+			end
+		RESET_RCARD_2: begin
+				char_x = 8'b10001011;
+				char_y = 8'b00110100;
+				char_colour = 3'b000;
+				state = DRAW_LTOTAL_1;
+			end
+		DRAW_LTOTAL_1: begin
+				char_x = 8'b00010110; // 22
+				char_y = 8'b01101001; // 105
+				char_colour = 3'b111;
+				state = RESET_LTOTAL_1;
+			end
+		RESET_LTOTAL_1: begin
+				char_x = 8'b00010110;
+				char_y = 8'b01101001;
+				char_colour = 3'b000;
+				state = DRAW_LTOTAL_2;
+			end
+		DRAW_LTOTAL_2: begin
+				char_x = 8'b00011101; // 29
+				char_y = 8'b01101001;
+				char_colour = 3'b111;
+				state = RESET_LTOTAL_2;
+			end
+		RESET_LTOTAL_2: begin
+				char_x = 8'b00011101;
+				char_y = 8'b01101001;
+				char_colour = 3'b000;
+				state = DRAW_RTOTAL_1;
+			end
+		DRAW_RTOTAL_1: begin
+				char_x = 8'b10001011; // 139
+				char_y = 8'b01101001;
+				char_colour = 3'b111;
+				state = RESET_RTOTAL_1;
+			end
+		RESET_RTOTAL_1: begin
+				char_x = 8'b10001011;
+				char_y = 8'b01101001;
+				char_colour = 3'b000;
+				state = DRAW_RTOTAL_2;
+			end
+		DRAW_RTOTAL_2: begin
+				char_x = 8'b10010010; // 146
+				char_y = 8'b01101001;
+				char_colour = 3'b111;
+				state = RESET_RTOTAL_2;
+			end
+		RESET_RTOTAL_2: begin
+				char_x = 8'b10010010;
+				char_y = 8'b01101001;
+				char_colour = 3'b000;
+				state = DRAW_LSCORE_1;
+			end
+		endcase
 	 end
 
 
 endmodule
 
+// module that draws individual characters at given locations and colour
 module drawcharacter(CLOCK_50, x_coord, y_coord, colour_in, character, x_out, y_out, colour_out);
 	input CLOCK_50;
 	input [7:0] x_coord; 
@@ -166,7 +302,6 @@ module drawcharacter(CLOCK_50, x_coord, y_coord, colour_in, character, x_out, y_
 	reg [5:0] counter;
 	wire [4:0] state;
 	assign state = character;	
-	
 	
 	// characters and their respective state/case value: 0-16 for 0,1,2,3,4,5,6,7,8,9,J,Q,K,H,C,S,D
 	localparam C0 = 5'b00000,
@@ -186,8 +321,6 @@ module drawcharacter(CLOCK_50, x_coord, y_coord, colour_in, character, x_out, y_
 		CC = 5'b01110,
 		CS = 5'b01111,
 		CD = 5'b10000;
-
-	
 
 	// create registers for the x and y coordinates for each character (1D array of pixel locations from left to right, top to bottom, single pixel at a time)
 	reg [7:0] C0X [39:0];
@@ -1685,9 +1818,7 @@ module drawcharacter(CLOCK_50, x_coord, y_coord, colour_in, character, x_out, y_
 			end
 		endcase
 		
-
 	end
-
 
 endmodule
 
