@@ -1,3 +1,5 @@
+
+
 module drawui (CLOCK_50,						//	On Board 50 MHz
 		// Your inputs and outputs here
         KEY,
@@ -10,7 +12,8 @@ module drawui (CLOCK_50,						//	On Board 50 MHz
 		VGA_SYNC_N,						//	VGA SYNC
 		VGA_R,   						//	VGA Red[9:0]
 		VGA_G,	 						//	VGA Green[9:0]
-		VGA_B   						//	VGA Blue[9:0]
+		VGA_B,   						//	VGA Blue[9:0]
+		
 		);
 
 	input			CLOCK_50;				//	50 MHz
@@ -35,31 +38,31 @@ module drawui (CLOCK_50,						//	On Board 50 MHz
 	wire writeEn;
 	
 	vga_adapter VGA(
-		.resetn(resetn),
-		.clock(CLOCK_50),
-		.colour(colour),
-		.x(x),
-		.y(y),
-		.plot(writeEn),
-		/* Signals for the DAC to drive the monitor. */
-		.VGA_R(VGA_R),
-		.VGA_G(VGA_G),
-		.VGA_B(VGA_B),
-		.VGA_HS(VGA_HS),
-		.VGA_VS(VGA_VS),
-		.VGA_BLANK(VGA_BLANK_N),
-		.VGA_SYNC(VGA_SYNC_N),
-		.VGA_CLK(VGA_CLK));
-	defparam VGA.RESOLUTION = "160x120";
-	defparam VGA.MONOCHROME = "FALSE";
-	defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
-	defparam VGA.BACKGROUND_IMAGE = "black.mif";
-	
-	 reg [5:0] state;
+			.resetn(1'b1),
+			.clock(CLOCK_50),
+			.colour(colour),
+			.x(x),
+			.y(y),
+			.plot(1'b1),
+			/* Signals for the DAC to drive the monitor. */
+			.VGA_R(VGA_R),
+			.VGA_G(VGA_G),
+			.VGA_B(VGA_B),
+			.VGA_HS(VGA_HS),
+			.VGA_VS(VGA_VS),
+			.VGA_BLANK(VGA_BLANK_N),
+			.VGA_SYNC(VGA_SYNC_N),
+			.VGA_CLK(VGA_CLK));
+		defparam VGA.RESOLUTION = "160x120";
+		defparam VGA.MONOCHROME = "FALSE";
+		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
+		defparam VGA.BACKGROUND_IMAGE = "black.mif";
+	 
+	 
 	 
 	/// declare all cases' local parameter names and values
-	localparam RESET_GUI = 6'b000000,
-		DRAW_STATIC_GUI = 6'b000001,	// draws the static GUI: P1, P2, Card outlines, T:
+	localparam DRAW_LSCORE_1 = 6'b000000,
+		DRAW_LSCORE_2 = 6'b000001,	// draws the static GUI: P1, P2, Card outlines, T:
 		DRAW_CARD_INFO = 6'b000010, // draws the card's suit and value
 		RESET_CARD_INFO = 6'b000011, // resets the card interior to blank so that it may be redrawn ie transition
 		DRAW_P1_SCORE = 6'b000100, // draws the score for P1
@@ -72,13 +75,40 @@ module drawui (CLOCK_50,						//	On Board 50 MHz
 		RESET_HAND2 = 6'b001011, // resets the total values in hand for p2
 		DRAW_RESULT = 6'b001100, // draws the end game result ie who won
 		RESET_RESULT = 6'b001101; // resets the end game result ie who won
+		
+	/*
+	// testing
+	reg [31:0] countseconds;
+	reg [7:0] testcountx;
+	reg [4:0]testcharacter;
 	
+	always@(posedge CLOCK_50)begin
+		countseconds = countseconds + 1;
+		if (countseconds == 50000)begin
+			if (testcharacter > 5'b10000)begin
+				testcharacter = 5'b00000;
+			end
+			testcountx = testcountx + 1'b1;
+			testcharacter = testcharacter + 1'b1;
+			countseconds = 0;
+		end
+		http://www.eecg.utoronto.ca/~jayar/ece241_08F/vga/vga-download.html
+	end*/
+	drawcharacter draw(.CLOCK_50(CLOCK_50),
+		.x_coord(8'b00001001), //9
+		.y_coord(8'b00001001), //9
+		.colour_in(3'b111),
+		.character(5'b00000),
+		.x_out(x),
+		.y_out(y),
+		.colour_out(colour));
+	
+	reg [5:0] state;
 	// check for cases
-	state = DRAW_CARD_INFO;
+	assign state = DRAW_CARD_INFO;
 	 always@(posedge CLOCK_50)
 	 begin
 		case (state)
-
 			DRAW_CARD_INFO: begin
 				state = RESET_CARD_INFO;
 			end
@@ -86,36 +116,38 @@ module drawui (CLOCK_50,						//	On Board 50 MHz
 				state = DRAW_P1_SCORE;
 			end
 			DRAW_P1_SCORE: begin
-				state = RESET_P1_SCORE;
+				assign state = RESET_P1_SCORE;
 			end
 			RESET_P1_SCORE: begin
-				state = DRAW_P2_SCORE;
+				assign state = DRAW_P2_SCORE;
 			end
 			DRAW_P2_SCORE: begin
-				state = RESET_P2_SCORE;
+				assign state = RESET_P2_SCORE;
 			end
 			RESET_P2_SCORE: begin
-				state = DRAW_HAND1;
+				assign state = DRAW_HAND1;
 			end
 			DRAW_HAND1: begin
-				state = RESET_HAND1;
+				assign state = RESET_HAND1;
 			end
 			RESET_HAND1: begin
-				state = DRAW_HAND2;
+				assign state = DRAW_HAND2;
 			end
 			DRAW_HAND2: begin
-				state = RESET_HAND2;
+				assign state = RESET_HAND2;
 			end
 			RESET_HAND2: begin
-				state = DRAW_RESULT;
+				assign state = DRAW_RESULT;
 			end
 			DRAW_RESULT: begin
-				state = RESET_RESULT;
+				assign state = RESET_RESULT;
 			end
 			RESET_RESULT: begin
-				state = RESET_GUI;
+				assign state = RESET_GUI;
 			end
+			endcase
 	 end
+
 
 endmodule
 
@@ -123,20 +155,21 @@ module drawcharacter(CLOCK_50, x_coord, y_coord, colour_in, character, x_out, y_
 	input CLOCK_50;
 	input [7:0] x_coord; 
 	input [7:0] y_coord;
-	input [2:0] colour;
+	input [2:0] colour_in;
 	input [3:0] character; // 13 characters -> 13 indexes -> 4 bits
-	output [7:0] x_out;
-	output [6:0] y_out;
+	output reg [7:0] x_out;
+	output reg [6:0] y_out;
 	output [2:0] colour_out;
 	
-	colour_out = colour_in;
-
-	reg [4:0] state;
-	state = character;	
+	assign colour_out = colour_in;
+	
+	reg [5:0] counter;
+	wire [4:0] state;
+	assign state = character;	
 	
 	
 	// characters and their respective state/case value: 0-16 for 0,1,2,3,4,5,6,7,8,9,J,Q,K,H,C,S,D
-	localparam C0 = 5'b0000,
+	localparam C0 = 5'b00000,
 		C1 = 5'b00001,
 		C2 = 5'b00010,
 		C3 = 5'b00011,
@@ -154,19 +187,19 @@ module drawcharacter(CLOCK_50, x_coord, y_coord, colour_in, character, x_out, y_
 		CS = 5'b01111,
 		CD = 5'b10000;
 
-	reg [5:0] counter;
+	
 
 	// create registers for the x and y coordinates for each character (1D array of pixel locations from left to right, top to bottom, single pixel at a time)
-	reg [7:0] 0X [39:0];
-	reg [7:0] 1X [15:0];
-	reg [7:0] 2X [39:0];
-	reg [7:0] 3X [39:0];
-	reg [7:0] 4X [29:0];
-	reg [7:0] 5X [39:0];
-	reg [7:0] 6X [41:0];
-	reg [7:0] 7X [25:0];
-	reg [7:0] 8X [43:0];
-	reg [7:0] 9X [33:0];
+	reg [7:0] C0X [39:0];
+	reg [7:0] C1X [15:0];
+	reg [7:0] C2X [39:0];
+	reg [7:0] C3X [39:0];
+	reg [7:0] C4X [29:0];
+	reg [7:0] C5X [39:0];
+	reg [7:0] C6X [41:0];
+	reg [7:0] C7X [25:0];
+	reg [7:0] C8X [43:0];
+	reg [7:0] C9X [33:0];
 	reg [7:0] JX [23:0];
 	reg [7:0] QX [37:0];
 	reg [7:0] KX [31:0];
@@ -175,16 +208,16 @@ module drawcharacter(CLOCK_50, x_coord, y_coord, colour_in, character, x_out, y_
 	reg [7:0] SX [37:0];
 	reg [7:0] DX [37:0];
 
-	reg [7:0] 0Y [39:0];
-	reg [7:0] 1Y [15:0];
-	reg [7:0] 2Y [39:0];
-	reg [7:0] 3Y [39:0];
-	reg [7:0] 4Y [29:0];
-	reg [7:0] 5Y [39:0];
-	reg [7:0] 6Y [41:0];
-	reg [7:0] 7Y [25:0];
-	reg [7:0] 8Y [43:0];
-	reg [7:0] 9Y [33:0];
+	reg [7:0] C0Y [39:0];
+	reg [7:0] C1Y [15:0];
+	reg [7:0] C2Y [39:0];
+	reg [7:0] C3Y [39:0];
+	reg [7:0] C4Y [29:0];
+	reg [7:0] C5Y [39:0];
+	reg [7:0] C6Y [41:0];
+	reg [7:0] C7Y [25:0];
+	reg [7:0] C8Y [43:0];
+	reg [7:0] C9Y [33:0];
 	reg [7:0] JY [23:0];
 	reg [7:0] QY [37:0];
 	reg [7:0] KY [31:0];
@@ -197,729 +230,729 @@ module drawcharacter(CLOCK_50, x_coord, y_coord, colour_in, character, x_out, y_
 	begin
 
 	// assign values for the X and Y registers for the characters
-	//// character 0
-	0X[0] = x_coord ;
-	0Y[0] = y_coord ;
-	0X[1] = x_coord + 7'b0000001;
-	0Y[1] = y_coord ;
-	0X[2] = x_coord + 7'b0000010;
-	0Y[2] = y_coord ;
-	0X[3] = x_coord + 7'b0000011;
-	0Y[3] = y_coord ;
-	0X[4] = x_coord + 7'b0000100;
-	0Y[4] = y_coord ;
-	0X[5] = x_coord + 7'b0000101;
-	0Y[5] = y_coord ;
-	0X[6] = x_coord ;
-	0Y[6] = y_coord + 7'b0000001;
-	0X[7] = x_coord + 7'b0000001;
-	0Y[7] = y_coord + 7'b0000001;
-	0X[8] = x_coord + 7'b0000010;
-	0Y[8] = y_coord + 7'b0000001;
-	0X[9] = x_coord + 7'b0000011;
-	0Y[9] = y_coord + 7'b0000001;
-	0X[10] = x_coord + 7'b0000100;
-	0Y[10] = y_coord + 7'b0000001;
-	0X[11] = x_coord + 7'b0000101;
-	0Y[11] = y_coord + 7'b0000001;
-	0X[12] = x_coord ;
-	0Y[12] = y_coord + 7'b0000010;
-	0X[13] = x_coord + 7'b0000001;
-	0Y[13] = y_coord + 7'b0000010;
-	0X[14] = x_coord + 7'b0000100;
-	0Y[14] = y_coord + 7'b0000010;
-	0X[15] = x_coord + 7'b0000101;
-	0Y[15] = y_coord + 7'b0000010;
-	0X[16] = x_coord ;
-	0Y[16] = y_coord + 7'b0000011;
-	0X[17] = x_coord + 7'b0000001;
-	0Y[17] = y_coord + 7'b0000011;
-	0X[18] = x_coord + 7'b0000100;
-	0Y[18] = y_coord + 7'b0000011;
-	0X[19] = x_coord + 7'b0000101;
-	0Y[19] = y_coord + 7'b0000011;
-	0X[20] = x_coord ;
-	0Y[20] = y_coord + 7'b0000100;
-	0X[21] = x_coord + 7'b0000001;
-	0Y[21] = y_coord + 7'b0000100;
-	0X[22] = x_coord + 7'b0000100;
-	0Y[22] = y_coord + 7'b0000100;
-	0X[23] = x_coord + 7'b0000101;
-	0Y[23] = y_coord + 7'b0000100;
-	0X[24] = x_coord ;
-	0Y[24] = y_coord + 7'b0000101;
-	0X[25] = x_coord + 7'b0000001;
-	0Y[25] = y_coord + 7'b0000101;
-	0X[26] = x_coord + 7'b0000100;
-	0Y[26] = y_coord + 7'b0000101;
-	0X[27] = x_coord + 7'b0000101;
-	0Y[27] = y_coord + 7'b0000101;
-	0X[28] = x_coord ;
-	0Y[28] = y_coord + 7'b0000110;
-	0X[29] = x_coord + 7'b0000001;
-	0Y[29] = y_coord + 7'b0000110;
-	0X[30] = x_coord + 7'b0000010;
-	0Y[30] = y_coord + 7'b0000110;
-	0X[31] = x_coord + 7'b0000011;
-	0Y[31] = y_coord + 7'b0000110;
-	0X[32] = x_coord + 7'b0000100;
-	0Y[32] = y_coord + 7'b0000110;
-	0X[33] = x_coord + 7'b0000101;
-	0Y[33] = y_coord + 7'b0000110;
-	0X[34] = x_coord ;
-	0Y[34] = y_coord + 7'b0000111;
-	0X[35] = x_coord + 7'b0000001;
-	0Y[35] = y_coord + 7'b0000111;
-	0X[36] = x_coord + 7'b0000010;
-	0Y[36] = y_coord + 7'b0000111;
-	0X[37] = x_coord + 7'b0000011;
-	0Y[37] = y_coord + 7'b0000111;
-	0X[38] = x_coord + 7'b0000100;
-	0Y[38] = y_coord + 7'b0000111;
-	0X[39] = x_coord + 7'b0000101;
-	0Y[39] = y_coord + 7'b0000111;
+	//// character 0Blackjack
+	C0X[0] = x_coord ;
+	C0Y[0] = y_coord ;
+	C0X[1] = x_coord + 7'b0000001;
+	C0Y[1] = y_coord ;
+	C0X[2] = x_coord + 7'b0000010;
+	C0Y[2] = y_coord ;
+	C0X[3] = x_coord + 7'b0000011;
+	C0Y[3] = y_coord ;
+	C0X[4] = x_coord + 7'b0000100;
+	C0Y[4] = y_coord ;
+	C0X[5] = x_coord + 7'b0000101;
+	C0Y[5] = y_coord ;
+	C0X[6] = x_coord ;
+	C0Y[6] = y_coord + 7'b0000001;
+	C0X[7] = x_coord + 7'b0000001;
+	C0Y[7] = y_coord + 7'b0000001;
+	C0X[8] = x_coord + 7'b0000010;
+	C0Y[8] = y_coord + 7'b0000001;
+	C0X[9] = x_coord + 7'b0000011;
+	C0Y[9] = y_coord + 7'b0000001;
+	C0X[10] = x_coord + 7'b0000100;
+	C0Y[10] = y_coord + 7'b0000001;
+	C0X[11] = x_coord + 7'b0000101;
+	C0Y[11] = y_coord + 7'b0000001;
+	C0X[12] = x_coord ;
+	C0Y[12] = y_coord + 7'b0000010;
+	C0X[13] = x_coord + 7'b0000001;
+	C0Y[13] = y_coord + 7'b0000010;
+	C0X[14] = x_coord + 7'b0000100;
+	C0Y[14] = y_coord + 7'b0000010;
+	C0X[15] = x_coord + 7'b0000101;
+	C0Y[15] = y_coord + 7'b0000010;
+	C0X[16] = x_coord ;
+	C0Y[16] = y_coord + 7'b0000011;
+	C0X[17] = x_coord + 7'b0000001;
+	C0Y[17] = y_coord + 7'b0000011;
+	C0X[18] = x_coord + 7'b0000100;
+	C0Y[18] = y_coord + 7'b0000011;
+	C0X[19] = x_coord + 7'b0000101;
+	C0Y[19] = y_coord + 7'b0000011;
+	C0X[20] = x_coord ;
+	C0Y[20] = y_coord + 7'b0000100;
+	C0X[21] = x_coord + 7'b0000001;
+	C0Y[21] = y_coord + 7'b0000100;
+	C0X[22] = x_coord + 7'b0000100;
+	C0Y[22] = y_coord + 7'b0000100;
+	C0X[23] = x_coord + 7'b0000101;
+	C0Y[23] = y_coord + 7'b0000100;
+	C0X[24] = x_coord ;
+	C0Y[24] = y_coord + 7'b0000101;
+	C0X[25] = x_coord + 7'b0000001;
+	C0Y[25] = y_coord + 7'b0000101;
+	C0X[26] = x_coord + 7'b0000100;
+	C0Y[26] = y_coord + 7'b0000101;
+	C0X[27] = x_coord + 7'b0000101;
+	C0Y[27] = y_coord + 7'b0000101;
+	C0X[28] = x_coord ;
+	C0Y[28] = y_coord + 7'b0000110;
+	C0X[29] = x_coord + 7'b0000001;
+	C0Y[29] = y_coord + 7'b0000110;
+	C0X[30] = x_coord + 7'b0000010;
+	C0Y[30] = y_coord + 7'b0000110;
+	C0X[31] = x_coord + 7'b0000011;
+	C0Y[31] = y_coord + 7'b0000110;
+	C0X[32] = x_coord + 7'b0000100;
+	C0Y[32] = y_coord + 7'b0000110;
+	C0X[33] = x_coord + 7'b0000101;
+	C0Y[33] = y_coord + 7'b0000110;
+	C0X[34] = x_coord ;
+	C0Y[34] = y_coord + 7'b0000111;
+	C0X[35] = x_coord + 7'b0000001;
+	C0Y[35] = y_coord + 7'b0000111;
+	C0X[36] = x_coord + 7'b0000010;
+	C0Y[36] = y_coord + 7'b0000111;
+	C0X[37] = x_coord + 7'b0000011;
+	C0Y[37] = y_coord + 7'b0000111;
+	C0X[38] = x_coord + 7'b0000100;
+	C0Y[38] = y_coord + 7'b0000111;
+	C0X[39] = x_coord + 7'b0000101;
+	C0Y[39] = y_coord + 7'b0000111;
 
 	//// character 1
-	1X[0] = x_coord ;
-	1Y[0] = y_coord ;
-	1X[1] = x_coord + 7'b0000001;
-	1Y[1] = y_coord ;
-	1X[2] = x_coord ;
-	1Y[2] = y_coord + 7'b0000001;
-	1X[3] = x_coord + 7'b0000001;
-	1Y[3] = y_coord + 7'b0000001;
-	1X[4] = x_coord ;
-	1Y[4] = y_coord + 7'b0000010;
-	1X[5] = x_coord + 7'b0000001;
-	1Y[5] = y_coord + 7'b0000010;
-	1X[6] = x_coord ;
-	1Y[6] = y_coord + 7'b0000011;
-	1X[7] = x_coord + 7'b0000001;
-	1Y[7] = y_coord + 7'b0000011;
-	1X[8] = x_coord ;
-	1Y[8] = y_coord + 7'b0000100;
-	1X[9] = x_coord + 7'b0000001;
-	1Y[9] = y_coord + 7'b0000100;
-	1X[10] = x_coord ;
-	1Y[10] = y_coord + 7'b0000101;
-	1X[11] = x_coord + 7'b0000001;
-	1Y[11] = y_coord + 7'b0000101;
-	1X[12] = x_coord ;
-	1Y[12] = y_coord + 7'b0000110;
-	1X[13] = x_coord + 7'b0000001;
-	1Y[13] = y_coord + 7'b0000110;
-	1X[14] = x_coord ;
-	1Y[14] = y_coord + 7'b0000111;
-	1X[15] = x_coord + 7'b0000001;
-	1Y[15] = y_coord + 7'b0000111;
+	C1X[0] = x_coord ;
+	C1Y[0] = y_coord ;
+	C1X[1] = x_coord + 7'b0000001;
+	C1Y[1] = y_coord ;
+	C1X[2] = x_coord ;
+	C1Y[2] = y_coord + 7'b0000001;
+	C1X[3] = x_coord + 7'b0000001;
+	C1Y[3] = y_coord + 7'b0000001;
+	C1X[4] = x_coord ;
+	C1Y[4] = y_coord + 7'b0000010;
+	C1X[5] = x_coord + 7'b0000001;
+	C1Y[5] = y_coord + 7'b0000010;
+	C1X[6] = x_coord ;
+	C1Y[6] = y_coord + 7'b0000011;
+	C1X[7] = x_coord + 7'b0000001;
+	C1Y[7] = y_coord + 7'b0000011;
+	C1X[8] = x_coord ;
+	C1Y[8] = y_coord + 7'b0000100;
+	C1X[9] = x_coord + 7'b0000001;
+	C1Y[9] = y_coord + 7'b0000100;
+	C1X[10] = x_coord ;
+	C1Y[10] = y_coord + 7'b0000101;
+	C1X[11] = x_coord + 7'b0000001;
+	C1Y[11] = y_coord + 7'b0000101;
+	C1X[12] = x_coord ;
+	C1Y[12] = y_coord + 7'b0000110;
+	C1X[13] = x_coord + 7'b0000001;
+	C1Y[13] = y_coord + 7'b0000110;
+	C1X[14] = x_coord ;
+	C1Y[14] = y_coord + 7'b0000111;
+	C1X[15] = x_coord + 7'b0000001;
+	C1Y[15] = y_coord + 7'b0000111;
 
 	//// character 2
-	2X[0] = x_coord ;
-	2Y[0] = y_coord ;
-	2X[1] = x_coord + 7'b0000001;
-	2Y[1] = y_coord ;
-	2X[2] = x_coord + 7'b0000010;
-	2Y[2] = y_coord ;
-	2X[3] = x_coord + 7'b0000011;
-	2Y[3] = y_coord ;
-	2X[4] = x_coord + 7'b0000100;
-	2Y[4] = y_coord ;
-	2X[5] = x_coord + 7'b0000101;
-	2Y[5] = y_coord ;
-	2X[6] = x_coord ;
-	2Y[6] = y_coord + 7'b0000001;
-	2X[7] = x_coord + 7'b0000001;
-	2Y[7] = y_coord + 7'b0000001;
-	2X[8] = x_coord + 7'b0000010;
-	2Y[8] = y_coord + 7'b0000001;
-	2X[9] = x_coord + 7'b0000011;
-	2Y[9] = y_coord + 7'b0000001;
-	2X[10] = x_coord + 7'b0000100;
-	2Y[10] = y_coord + 7'b0000001;
-	2X[11] = x_coord + 7'b0000101;
-	2Y[11] = y_coord + 7'b0000001;
-	2X[12] = x_coord + 7'b0000100;
-	2Y[12] = y_coord + 7'b0000010;
-	2X[13] = x_coord + 7'b0000101;
-	2Y[13] = y_coord + 7'b0000010;
-	2X[14] = x_coord ;
-	2Y[14] = y_coord + 7'b0000011;
-	2X[15] = x_coord + 7'b0000001;
-	2Y[15] = y_coord + 7'b0000011;
-	2X[16] = x_coord + 7'b0000010;
-	2Y[16] = y_coord + 7'b0000011;
-	2X[17] = x_coord + 7'b0000011;
-	2Y[17] = y_coord + 7'b0000011;
-	2X[18] = x_coord + 7'b0000100;
-	2Y[18] = y_coord + 7'b0000011;
-	2X[19] = x_coord + 7'b0000101;
-	2Y[19] = y_coord + 7'b0000011;
-	2X[20] = x_coord ;
-	2Y[20] = y_coord + 7'b0000100;
-	2X[21] = x_coord + 7'b0000001;
-	2Y[21] = y_coord + 7'b0000100;
-	2X[22] = x_coord + 7'b0000010;
-	2Y[22] = y_coord + 7'b0000100;
-	2X[23] = x_coord + 7'b0000011;
-	2Y[23] = y_coord + 7'b0000100;
-	2X[24] = x_coord + 7'b0000100;
-	2Y[24] = y_coord + 7'b0000100;
-	2X[25] = x_coord + 7'b0000101;
-	2Y[25] = y_coord + 7'b0000100;
-	2X[26] = x_coord ;
-	2Y[26] = y_coord + 7'b0000101;
-	2X[27] = x_coord + 7'b0000001;
-	2Y[27] = y_coord + 7'b0000101;
-	2X[28] = x_coord ;
-	2Y[28] = y_coord + 7'b0000110;
-	2X[29] = x_coord + 7'b0000001;
-	2Y[29] = y_coord + 7'b0000110;
-	2X[30] = x_coord + 7'b0000010;
-	2Y[30] = y_coord + 7'b0000110;
-	2X[31] = x_coord + 7'b0000011;
-	2Y[31] = y_coord + 7'b0000110;
-	2X[32] = x_coord + 7'b0000100;
-	2Y[32] = y_coord + 7'b0000110;
-	2X[33] = x_coord + 7'b0000101;
-	2Y[33] = y_coord + 7'b0000110;
-	2X[34] = x_coord ;
-	2Y[34] = y_coord + 7'b0000111;
-	2X[35] = x_coord + 7'b0000001;
-	2Y[35] = y_coord + 7'b0000111;
-	2X[36] = x_coord + 7'b0000010;
-	2Y[36] = y_coord + 7'b0000111;
-	2X[37] = x_coord + 7'b0000011;
-	2Y[37] = y_coord + 7'b0000111;
-	2X[38] = x_coord + 7'b0000100;
-	2Y[38] = y_coord + 7'b0000111;
-	2X[39] = x_coord + 7'b0000101;
-	2Y[39] = y_coord + 7'b0000111;
+	C2X[0] = x_coord ;
+	C2Y[0] = y_coord ;
+	C2X[1] = x_coord + 7'b0000001;
+	C2Y[1] = y_coord ;
+	C2X[2] = x_coord + 7'b0000010;
+	C2Y[2] = y_coord ;
+	C2X[3] = x_coord + 7'b0000011;
+	C2Y[3] = y_coord ;
+	C2X[4] = x_coord + 7'b0000100;
+	C2Y[4] = y_coord ;
+	C2X[5] = x_coord + 7'b0000101;
+	C2Y[5] = y_coord ;
+	C2X[6] = x_coord ;
+	C2Y[6] = y_coord + 7'b0000001;
+	C2X[7] = x_coord + 7'b0000001;
+	C2Y[7] = y_coord + 7'b0000001;
+	C2X[8] = x_coord + 7'b0000010;
+	C2Y[8] = y_coord + 7'b0000001;
+	C2X[9] = x_coord + 7'b0000011;
+	C2Y[9] = y_coord + 7'b0000001;
+	C2X[10] = x_coord + 7'b0000100;
+	C2Y[10] = y_coord + 7'b0000001;
+	C2X[11] = x_coord + 7'b0000101;
+	C2Y[11] = y_coord + 7'b0000001;
+	C2X[12] = x_coord + 7'b0000100;
+	C2Y[12] = y_coord + 7'b0000010;
+	C2X[13] = x_coord + 7'b0000101;
+	C2Y[13] = y_coord + 7'b0000010;
+	C2X[14] = x_coord ;
+	C2Y[14] = y_coord + 7'b0000011;
+	C2X[15] = x_coord + 7'b0000001;
+	C2Y[15] = y_coord + 7'b0000011;
+	C2X[16] = x_coord + 7'b0000010;
+	C2Y[16] = y_coord + 7'b0000011;
+	C2X[17] = x_coord + 7'b0000011;
+	C2Y[17] = y_coord + 7'b0000011;
+	C2X[18] = x_coord + 7'b0000100;
+	C2Y[18] = y_coord + 7'b0000011;
+	C2X[19] = x_coord + 7'b0000101;
+	C2Y[19] = y_coord + 7'b0000011;
+	C2X[20] = x_coord ;
+	C2Y[20] = y_coord + 7'b0000100;
+	C2X[21] = x_coord + 7'b0000001;
+	C2Y[21] = y_coord + 7'b0000100;
+	C2X[22] = x_coord + 7'b0000010;
+	C2Y[22] = y_coord + 7'b0000100;
+	C2X[23] = x_coord + 7'b0000011;
+	C2Y[23] = y_coord + 7'b0000100;
+	C2X[24] = x_coord + 7'b0000100;
+	C2Y[24] = y_coord + 7'b0000100;
+	C2X[25] = x_coord + 7'b0000101;
+	C2Y[25] = y_coord + 7'b0000100;
+	C2X[26] = x_coord ;
+	C2Y[26] = y_coord + 7'b0000101;
+	C2X[27] = x_coord + 7'b0000001;
+	C2Y[27] = y_coord + 7'b0000101;
+	C2X[28] = x_coord ;
+	C2Y[28] = y_coord + 7'b0000110;
+	C2X[29] = x_coord + 7'b0000001;
+	C2Y[29] = y_coord + 7'b0000110;
+	C2X[30] = x_coord + 7'b0000010;
+	C2Y[30] = y_coord + 7'b0000110;
+	C2X[31] = x_coord + 7'b0000011;
+	C2Y[31] = y_coord + 7'b0000110;
+	C2X[32] = x_coord + 7'b0000100;
+	C2Y[32] = y_coord + 7'b0000110;
+	C2X[33] = x_coord + 7'b0000101;
+	C2Y[33] = y_coord + 7'b0000110;
+	C2X[34] = x_coord ;
+	C2Y[34] = y_coord + 7'b0000111;
+	C2X[35] = x_coord + 7'b0000001;
+	C2Y[35] = y_coord + 7'b0000111;
+	C2X[36] = x_coord + 7'b0000010;
+	C2Y[36] = y_coord + 7'b0000111;
+	C2X[37] = x_coord + 7'b0000011;
+	C2Y[37] = y_coord + 7'b0000111;
+	C2X[38] = x_coord + 7'b0000100;
+	C2Y[38] = y_coord + 7'b0000111;
+	C2X[39] = x_coord + 7'b0000101;
+	C2Y[39] = y_coord + 7'b0000111;
 
 	//// character 3
-	3X[0] = x_coord ;
-	3Y[0] = y_coord ;
-	3X[1] = x_coord + 7'b0000001;
-	3Y[1] = y_coord ;
-	3X[2] = x_coord + 7'b0000010;
-	3Y[2] = y_coord ;
-	3X[3] = x_coord + 7'b0000011;
-	3Y[3] = y_coord ;
-	3X[4] = x_coord + 7'b0000100;
-	3Y[4] = y_coord ;
-	3X[5] = x_coord + 7'b0000101;
-	3Y[5] = y_coord ;
-	3X[6] = x_coord ;
-	3Y[6] = y_coord + 7'b0000001;
-	3X[7] = x_coord + 7'b0000001;
-	3Y[7] = y_coord + 7'b0000001;
-	3X[8] = x_coord + 7'b0000010;
-	3Y[8] = y_coord + 7'b0000001;
-	3X[9] = x_coord + 7'b0000011;
-	3Y[9] = y_coord + 7'b0000001;
-	3X[10] = x_coord + 7'b0000100;
-	3Y[10] = y_coord + 7'b0000001;
-	3X[11] = x_coord + 7'b0000101;
-	3Y[11] = y_coord + 7'b0000001;
-	3X[12] = x_coord + 7'b0000100;
-	3Y[12] = y_coord + 7'b0000010;
-	3X[13] = x_coord + 7'b0000101;
-	3Y[13] = y_coord + 7'b0000010;
-	3X[14] = x_coord ;
-	3Y[14] = y_coord + 7'b0000011;
-	3X[15] = x_coord + 7'b0000001;
-	3Y[15] = y_coord + 7'b0000011;
-	3X[16] = x_coord + 7'b0000010;
-	3Y[16] = y_coord + 7'b0000011;
-	3X[17] = x_coord + 7'b0000011;
-	3Y[17] = y_coord + 7'b0000011;
-	3X[18] = x_coord + 7'b0000100;
-	3Y[18] = y_coord + 7'b0000011;
-	3X[19] = x_coord + 7'b0000101;
-	3Y[19] = y_coord + 7'b0000011;
-	3X[20] = x_coord ;
-	3Y[20] = y_coord + 7'b0000100;
-	3X[21] = x_coord + 7'b0000001;
-	3Y[21] = y_coord + 7'b0000100;
-	3X[22] = x_coord + 7'b0000010;
-	3Y[22] = y_coord + 7'b0000100;
-	3X[23] = x_coord + 7'b0000011;
-	3Y[23] = y_coord + 7'b0000100;
-	3X[24] = x_coord + 7'b0000100;
-	3Y[24] = y_coord + 7'b0000100;
-	3X[25] = x_coord + 7'b0000101;
-	3Y[25] = y_coord + 7'b0000100;
-	3X[26] = x_coord + 7'b0000100;
-	3Y[26] = y_coord + 7'b0000101;
-	3X[27] = x_coord + 7'b0000101;
-	3Y[27] = y_coord + 7'b0000101;
-	3X[28] = x_coord ;
-	3Y[28] = y_coord + 7'b0000110;
-	3X[29] = x_coord + 7'b0000001;
-	3Y[29] = y_coord + 7'b0000110;
-	3X[30] = x_coord + 7'b0000010;
-	3Y[30] = y_coord + 7'b0000110;
-	3X[31] = x_coord + 7'b0000011;
-	3Y[31] = y_coord + 7'b0000110;
-	3X[32] = x_coord + 7'b0000100;
-	3Y[32] = y_coord + 7'b0000110;
-	3X[33] = x_coord + 7'b0000101;
-	3Y[33] = y_coord + 7'b0000110;
-	3X[34] = x_coord ;
-	3Y[34] = y_coord + 7'b0000111;
-	3X[35] = x_coord + 7'b0000001;
-	3Y[35] = y_coord + 7'b0000111;
-	3X[36] = x_coord + 7'b0000010;
-	3Y[36] = y_coord + 7'b0000111;
-	3X[37] = x_coord + 7'b0000011;
-	3Y[37] = y_coord + 7'b0000111;
-	3X[38] = x_coord + 7'b0000100;
-	3Y[38] = y_coord + 7'b0000111;
-	3X[39] = x_coord + 7'b0000101;
-	3Y[39] = y_coord + 7'b0000111;
+	C3X[0] = x_coord ;
+	C3Y[0] = y_coord ;
+	C3X[1] = x_coord + 7'b0000001;
+	C3Y[1] = y_coord ;
+	C3X[2] = x_coord + 7'b0000010;
+	C3Y[2] = y_coord ;
+	C3X[3] = x_coord + 7'b0000011;
+	C3Y[3] = y_coord ;
+	C3X[4] = x_coord + 7'b0000100;
+	C3Y[4] = y_coord ;
+	C3X[5] = x_coord + 7'b0000101;
+	C3Y[5] = y_coord ;
+	C3X[6] = x_coord ;
+	C3Y[6] = y_coord + 7'b0000001;
+	C3X[7] = x_coord + 7'b0000001;
+	C3Y[7] = y_coord + 7'b0000001;
+	C3X[8] = x_coord + 7'b0000010;
+	C3Y[8] = y_coord + 7'b0000001;
+	C3X[9] = x_coord + 7'b0000011;
+	C3Y[9] = y_coord + 7'b0000001;
+	C3X[10] = x_coord + 7'b0000100;
+	C3Y[10] = y_coord + 7'b0000001;
+	C3X[11] = x_coord + 7'b0000101;
+	C3Y[11] = y_coord + 7'b0000001;
+	C3X[12] = x_coord + 7'b0000100;
+	C3Y[12] = y_coord + 7'b0000010;
+	C3X[13] = x_coord + 7'b0000101;
+	C3Y[13] = y_coord + 7'b0000010;
+	C3X[14] = x_coord ;
+	C3Y[14] = y_coord + 7'b0000011;
+	C3X[15] = x_coord + 7'b0000001;
+	C3Y[15] = y_coord + 7'b0000011;
+	C3X[16] = x_coord + 7'b0000010;
+	C3Y[16] = y_coord + 7'b0000011;
+	C3X[17] = x_coord + 7'b0000011;
+	C3Y[17] = y_coord + 7'b0000011;
+	C3X[18] = x_coord + 7'b0000100;
+	C3Y[18] = y_coord + 7'b0000011;
+	C3X[19] = x_coord + 7'b0000101;
+	C3Y[19] = y_coord + 7'b0000011;
+	C3X[20] = x_coord ;
+	C3Y[20] = y_coord + 7'b0000100;
+	C3X[21] = x_coord + 7'b0000001;
+	C3Y[21] = y_coord + 7'b0000100;
+	C3X[22] = x_coord + 7'b0000010;
+	C3Y[22] = y_coord + 7'b0000100;
+	C3X[23] = x_coord + 7'b0000011;
+	C3Y[23] = y_coord + 7'b0000100;
+	C3X[24] = x_coord + 7'b0000100;
+	C3Y[24] = y_coord + 7'b0000100;
+	C3X[25] = x_coord + 7'b0000101;
+	C3Y[25] = y_coord + 7'b0000100;
+	C3X[26] = x_coord + 7'b0000100;
+	C3Y[26] = y_coord + 7'b0000101;
+	C3X[27] = x_coord + 7'b0000101;
+	C3Y[27] = y_coord + 7'b0000101;
+	C3X[28] = x_coord ;
+	C3Y[28] = y_coord + 7'b0000110;
+	C3X[29] = x_coord + 7'b0000001;
+	C3Y[29] = y_coord + 7'b0000110;
+	C3X[30] = x_coord + 7'b0000010;
+	C3Y[30] = y_coord + 7'b0000110;
+	C3X[31] = x_coord + 7'b0000011;
+	C3Y[31] = y_coord + 7'b0000110;
+	C3X[32] = x_coord + 7'b0000100;
+	C3Y[32] = y_coord + 7'b0000110;
+	C3X[33] = x_coord + 7'b0000101;
+	C3Y[33] = y_coord + 7'b0000110;
+	C3X[34] = x_coord ;
+	C3Y[34] = y_coord + 7'b0000111;
+	C3X[35] = x_coord + 7'b0000001;
+	C3Y[35] = y_coord + 7'b0000111;
+	C3X[36] = x_coord + 7'b0000010;
+	C3Y[36] = y_coord + 7'b0000111;
+	C3X[37] = x_coord + 7'b0000011;
+	C3Y[37] = y_coord + 7'b0000111;
+	C3X[38] = x_coord + 7'b0000100;
+	C3Y[38] = y_coord + 7'b0000111;
+	C3X[39] = x_coord + 7'b0000101;
+	C3Y[39] = y_coord + 7'b0000111;
 
 	//// character 4
-	4X[0] = x_coord ;
-	4Y[0] = y_coord ;
-	4X[1] = x_coord + 7'b0000001;
-	4Y[1] = y_coord ;
-	4X[2] = x_coord + 7'b0000100;
-	4Y[2] = y_coord ;
-	4X[3] = x_coord + 7'b0000101;
-	4Y[3] = y_coord ;
-	4X[4] = x_coord ;
-	4Y[4] = y_coord + 7'b0000001;
-	4X[5] = x_coord + 7'b0000001;
-	4Y[5] = y_coord + 7'b0000001;
-	4X[6] = x_coord + 7'b0000100;
-	4Y[6] = y_coord + 7'b0000001;
-	4X[7] = x_coord + 7'b0000101;
-	4Y[7] = y_coord + 7'b0000001;
-	4X[8] = x_coord ;
-	4Y[8] = y_coord + 7'b0000010;
-	4X[9] = x_coord + 7'b0000001;
-	4Y[9] = y_coord + 7'b0000010;
-	4X[10] = x_coord + 7'b0000100;
-	4Y[10] = y_coord + 7'b0000010;
-	4X[11] = x_coord + 7'b0000101;
-	4Y[11] = y_coord + 7'b0000010;
-	4X[12] = x_coord ;
-	4Y[12] = y_coord + 7'b0000011;
-	4X[13] = x_coord + 7'b0000001;
-	4Y[13] = y_coord + 7'b0000011;
-	4X[14] = x_coord + 7'b0000010;
-	4Y[14] = y_coord + 7'b0000011;
-	4X[15] = x_coord + 7'b0000011;
-	4Y[15] = y_coord + 7'b0000011;
-	4X[16] = x_coord + 7'b0000100;
-	4Y[16] = y_coord + 7'b0000011;
-	4X[17] = x_coord + 7'b0000101;
-	4Y[17] = y_coord + 7'b0000011;
-	4X[18] = x_coord ;
-	4Y[18] = y_coord + 7'b0000100;
-	4X[19] = x_coord + 7'b0000001;
-	4Y[19] = y_coord + 7'b0000100;
-	4X[20] = x_coord + 7'b0000010;
-	4Y[20] = y_coord + 7'b0000100;
-	4X[21] = x_coord + 7'b0000011;
-	4Y[21] = y_coord + 7'b0000100;
-	4X[22] = x_coord + 7'b0000100;
-	4Y[22] = y_coord + 7'b0000100;
-	4X[23] = x_coord + 7'b0000101;
-	4Y[23] = y_coord + 7'b0000100;
-	4X[24] = x_coord + 7'b0000100;
-	4Y[24] = y_coord + 7'b0000101;
-	4X[25] = x_coord + 7'b0000101;
-	4Y[25] = y_coord + 7'b0000101;
-	4X[26] = x_coord + 7'b0000100;
-	4Y[26] = y_coord + 7'b0000110;
-	4X[27] = x_coord + 7'b0000101;
-	4Y[27] = y_coord + 7'b0000110;
-	4X[28] = x_coord + 7'b0000100;
-	4Y[28] = y_coord + 7'b0000111;
-	4X[29] = x_coord + 7'b0000101;
-	4Y[29] = y_coord + 7'b0000111;
+	C4X[0] = x_coord ;
+	C4Y[0] = y_coord ;
+	C4X[1] = x_coord + 7'b0000001;
+	C4Y[1] = y_coord ;
+	C4X[2] = x_coord + 7'b0000100;
+	C4Y[2] = y_coord ;
+	C4X[3] = x_coord + 7'b0000101;
+	C4Y[3] = y_coord ;
+	C4X[4] = x_coord ;
+	C4Y[4] = y_coord + 7'b0000001;
+	C4X[5] = x_coord + 7'b0000001;
+	C4Y[5] = y_coord + 7'b0000001;
+	C4X[6] = x_coord + 7'b0000100;
+	C4Y[6] = y_coord + 7'b0000001;
+	C4X[7] = x_coord + 7'b0000101;
+	C4Y[7] = y_coord + 7'b0000001;
+	C4X[8] = x_coord ;
+	C4Y[8] = y_coord + 7'b0000010;
+	C4X[9] = x_coord + 7'b0000001;
+	C4Y[9] = y_coord + 7'b0000010;
+	C4X[10] = x_coord + 7'b0000100;
+	C4Y[10] = y_coord + 7'b0000010;
+	C4X[11] = x_coord + 7'b0000101;
+	C4Y[11] = y_coord + 7'b0000010;
+	C4X[12] = x_coord ;
+	C4Y[12] = y_coord + 7'b0000011;
+	C4X[13] = x_coord + 7'b0000001;
+	C4Y[13] = y_coord + 7'b0000011;
+	C4X[14] = x_coord + 7'b0000010;
+	C4Y[14] = y_coord + 7'b0000011;
+	C4X[15] = x_coord + 7'b0000011;
+	C4Y[15] = y_coord + 7'b0000011;
+	C4X[16] = x_coord + 7'b0000100;
+	C4Y[16] = y_coord + 7'b0000011;
+	C4X[17] = x_coord + 7'b0000101;
+	C4Y[17] = y_coord + 7'b0000011;
+	C4X[18] = x_coord ;
+	C4Y[18] = y_coord + 7'b0000100;
+	C4X[19] = x_coord + 7'b0000001;
+	C4Y[19] = y_coord + 7'b0000100;
+	C4X[20] = x_coord + 7'b0000010;
+	C4Y[20] = y_coord + 7'b0000100;
+	C4X[21] = x_coord + 7'b0000011;
+	C4Y[21] = y_coord + 7'b0000100;
+	C4X[22] = x_coord + 7'b0000100;
+	C4Y[22] = y_coord + 7'b0000100;
+	C4X[23] = x_coord + 7'b0000101;
+	C4Y[23] = y_coord + 7'b0000100;
+	C4X[24] = x_coord + 7'b0000100;
+	C4Y[24] = y_coord + 7'b0000101;
+	C4X[25] = x_coord + 7'b0000101;
+	C4Y[25] = y_coord + 7'b0000101;
+	C4X[26] = x_coord + 7'b0000100;
+	C4Y[26] = y_coord + 7'b0000110;
+	C4X[27] = x_coord + 7'b0000101;
+	C4Y[27] = y_coord + 7'b0000110;
+	C4X[28] = x_coord + 7'b0000100;
+	C4Y[28] = y_coord + 7'b0000111;
+	C4X[29] = x_coord + 7'b0000101;
+	C4Y[29] = y_coord + 7'b0000111;
 
 	//// character 5
-	5X[0] = x_coord ;
-	5Y[0] = y_coord ;
-	5X[1] = x_coord + 7'b0000001;
-	5Y[1] = y_coord ;
-	5X[2] = x_coord + 7'b0000010;
-	5Y[2] = y_coord ;
-	5X[3] = x_coord + 7'b0000011;
-	5Y[3] = y_coord ;
-	5X[4] = x_coord + 7'b0000100;
-	5Y[4] = y_coord ;
-	5X[5] = x_coord + 7'b0000101;
-	5Y[5] = y_coord ;
-	5X[6] = x_coord ;
-	5Y[6] = y_coord + 7'b0000001;
-	5X[7] = x_coord + 7'b0000001;
-	5Y[7] = y_coord + 7'b0000001;
-	5X[8] = x_coord + 7'b0000010;
-	5Y[8] = y_coord + 7'b0000001;
-	5X[9] = x_coord + 7'b0000011;
-	5Y[9] = y_coord + 7'b0000001;
-	5X[10] = x_coord + 7'b0000100;
-	5Y[10] = y_coord + 7'b0000001;
-	5X[11] = x_coord + 7'b0000101;
-	5Y[11] = y_coord + 7'b0000001;
-	5X[12] = x_coord ;
-	5Y[12] = y_coord + 7'b0000010;
-	5X[13] = x_coord + 7'b0000001;
-	5Y[13] = y_coord + 7'b0000010;
-	5X[14] = x_coord ;
-	5Y[14] = y_coord + 7'b0000011;
-	5X[15] = x_coord + 7'b0000001;
-	5Y[15] = y_coord + 7'b0000011;
-	5X[16] = x_coord + 7'b0000010;
-	5Y[16] = y_coord + 7'b0000011;
-	5X[17] = x_coord + 7'b0000011;
-	5Y[17] = y_coord + 7'b0000011;
-	5X[18] = x_coord + 7'b0000100;
-	5Y[18] = y_coord + 7'b0000011;
-	5X[19] = x_coord + 7'b0000101;
-	5Y[19] = y_coord + 7'b0000011;
-	5X[20] = x_coord ;
-	5Y[20] = y_coord + 7'b0000100;
-	5X[21] = x_coord + 7'b0000001;
-	5Y[21] = y_coord + 7'b0000100;
-	5X[22] = x_coord + 7'b0000010;
-	5Y[22] = y_coord + 7'b0000100;
-	5X[23] = x_coord + 7'b0000011;
-	5Y[23] = y_coord + 7'b0000100;
-	5X[24] = x_coord + 7'b0000100;
-	5Y[24] = y_coord + 7'b0000100;
-	5X[25] = x_coord + 7'b0000101;
-	5Y[25] = y_coord + 7'b0000100;
-	5X[26] = x_coord + 7'b0000100;
-	5Y[26] = y_coord + 7'b0000101;
-	5X[27] = x_coord + 7'b0000101;
-	5Y[27] = y_coord + 7'b0000101;
-	5X[28] = x_coord ;
-	5Y[28] = y_coord + 7'b0000110;
-	5X[29] = x_coord + 7'b0000001;
-	5Y[29] = y_coord + 7'b0000110;
-	5X[30] = x_coord + 7'b0000010;
-	5Y[30] = y_coord + 7'b0000110;
-	5X[31] = x_coord + 7'b0000011;
-	5Y[31] = y_coord + 7'b0000110;
-	5X[32] = x_coord + 7'b0000100;
-	5Y[32] = y_coord + 7'b0000110;
-	5X[33] = x_coord + 7'b0000101;
-	5Y[33] = y_coord + 7'b0000110;
-	5X[34] = x_coord ;
-	5Y[34] = y_coord + 7'b0000111;
-	5X[35] = x_coord + 7'b0000001;
-	5Y[35] = y_coord + 7'b0000111;
-	5X[36] = x_coord + 7'b0000010;
-	5Y[36] = y_coord + 7'b0000111;
-	5X[37] = x_coord + 7'b0000011;
-	5Y[37] = y_coord + 7'b0000111;
-	5X[38] = x_coord + 7'b0000100;
-	5Y[38] = y_coord + 7'b0000111;
-	5X[39] = x_coord + 7'b0000101;
-	5Y[39] = y_coord + 7'b0000111;
+	C5X[0] = x_coord ;
+	C5Y[0] = y_coord ;
+	C5X[1] = x_coord + 7'b0000001;
+	C5Y[1] = y_coord ;
+	C5X[2] = x_coord + 7'b0000010;
+	C5Y[2] = y_coord ;
+	C5X[3] = x_coord + 7'b0000011;
+	C5Y[3] = y_coord ;
+	C5X[4] = x_coord + 7'b0000100;
+	C5Y[4] = y_coord ;
+	C5X[5] = x_coord + 7'b0000101;
+	C5Y[5] = y_coord ;
+	C5X[6] = x_coord ;
+	C5Y[6] = y_coord + 7'b0000001;
+	C5X[7] = x_coord + 7'b0000001;
+	C5Y[7] = y_coord + 7'b0000001;
+	C5X[8] = x_coord + 7'b0000010;
+	C5Y[8] = y_coord + 7'b0000001;
+	C5X[9] = x_coord + 7'b0000011;
+	C5Y[9] = y_coord + 7'b0000001;
+	C5X[10] = x_coord + 7'b0000100;
+	C5Y[10] = y_coord + 7'b0000001;
+	C5X[11] = x_coord + 7'b0000101;
+	C5Y[11] = y_coord + 7'b0000001;
+	C5X[12] = x_coord ;
+	C5Y[12] = y_coord + 7'b0000010;
+	C5X[13] = x_coord + 7'b0000001;
+	C5Y[13] = y_coord + 7'b0000010;
+	C5X[14] = x_coord ;
+	C5Y[14] = y_coord + 7'b0000011;
+	C5X[15] = x_coord + 7'b0000001;
+	C5Y[15] = y_coord + 7'b0000011;
+	C5X[16] = x_coord + 7'b0000010;
+	C5Y[16] = y_coord + 7'b0000011;
+	C5X[17] = x_coord + 7'b0000011;
+	C5Y[17] = y_coord + 7'b0000011;
+	C5X[18] = x_coord + 7'b0000100;
+	C5Y[18] = y_coord + 7'b0000011;
+	C5X[19] = x_coord + 7'b0000101;
+	C5Y[19] = y_coord + 7'b0000011;
+	C5X[20] = x_coord ;
+	C5Y[20] = y_coord + 7'b0000100;
+	C5X[21] = x_coord + 7'b0000001;
+	C5Y[21] = y_coord + 7'b0000100;
+	C5X[22] = x_coord + 7'b0000010;
+	C5Y[22] = y_coord + 7'b0000100;
+	C5X[23] = x_coord + 7'b0000011;
+	C5Y[23] = y_coord + 7'b0000100;
+	C5X[24] = x_coord + 7'b0000100;
+	C5Y[24] = y_coord + 7'b0000100;
+	C5X[25] = x_coord + 7'b0000101;
+	C5Y[25] = y_coord + 7'b0000100;
+	C5X[26] = x_coord + 7'b0000100;
+	C5Y[26] = y_coord + 7'b0000101;
+	C5X[27] = x_coord + 7'b0000101;
+	C5Y[27] = y_coord + 7'b0000101;
+	C5X[28] = x_coord ;
+	C5Y[28] = y_coord + 7'b0000110;
+	C5X[29] = x_coord + 7'b0000001;
+	C5Y[29] = y_coord + 7'b0000110;
+	C5X[30] = x_coord + 7'b0000010;
+	C5Y[30] = y_coord + 7'b0000110;
+	C5X[31] = x_coord + 7'b0000011;
+	C5Y[31] = y_coord + 7'b0000110;
+	C5X[32] = x_coord + 7'b0000100;
+	C5Y[32] = y_coord + 7'b0000110;
+	C5X[33] = x_coord + 7'b0000101;
+	C5Y[33] = y_coord + 7'b0000110;
+	C5X[34] = x_coord ;
+	C5Y[34] = y_coord + 7'b0000111;
+	C5X[35] = x_coord + 7'b0000001;
+	C5Y[35] = y_coord + 7'b0000111;
+	C5X[36] = x_coord + 7'b0000010;
+	C5Y[36] = y_coord + 7'b0000111;
+	C5X[37] = x_coord + 7'b0000011;
+	C5Y[37] = y_coord + 7'b0000111;
+	C5X[38] = x_coord + 7'b0000100;
+	C5Y[38] = y_coord + 7'b0000111;
+	C5X[39] = x_coord + 7'b0000101;
+	C5Y[39] = y_coord + 7'b0000111;
 
 	//// character 6
-	6X[0] = x_coord ;
-	6Y[0] = y_coord ;
-	6X[1] = x_coord + 7'b0000001;
-	6Y[1] = y_coord ;
-	6X[2] = x_coord + 7'b0000010;
-	6Y[2] = y_coord ;
-	6X[3] = x_coord + 7'b0000011;
-	6Y[3] = y_coord ;
-	6X[4] = x_coord + 7'b0000100;
-	6Y[4] = y_coord ;
-	6X[5] = x_coord + 7'b0000101;
-	6Y[5] = y_coord ;
-	6X[6] = x_coord ;
-	6Y[6] = y_coord + 7'b0000001;
-	6X[7] = x_coord + 7'b0000001;
-	6Y[7] = y_coord + 7'b0000001;
-	6X[8] = x_coord + 7'b0000010;
-	6Y[8] = y_coord + 7'b0000001;
-	6X[9] = x_coord + 7'b0000011;
-	6Y[9] = y_coord + 7'b0000001;
-	6X[10] = x_coord + 7'b0000100;
-	6Y[10] = y_coord + 7'b0000001;
-	6X[11] = x_coord + 7'b0000101;
-	6Y[11] = y_coord + 7'b0000001;
-	6X[12] = x_coord ;
-	6Y[12] = y_coord + 7'b0000010;
-	6X[13] = x_coord + 7'b0000001;
-	6Y[13] = y_coord + 7'b0000010;
-	6X[14] = x_coord ;
-	6Y[14] = y_coord + 7'b0000011;
-	6X[15] = x_coord + 7'b0000001;
-	6Y[15] = y_coord + 7'b0000011;
-	6X[16] = x_coord + 7'b0000010;
-	6Y[16] = y_coord + 7'b0000011;
-	6X[17] = x_coord + 7'b0000011;
-	6Y[17] = y_coord + 7'b0000011;
-	6X[18] = x_coord + 7'b0000100;
-	6Y[18] = y_coord + 7'b0000011;
-	6X[19] = x_coord + 7'b0000101;
-	6Y[19] = y_coord + 7'b0000011;
-	6X[20] = x_coord ;
-	6Y[20] = y_coord + 7'b0000100;
-	6X[21] = x_coord + 7'b0000001;
-	6Y[21] = y_coord + 7'b0000100;
-	6X[22] = x_coord + 7'b0000010;
-	6Y[22] = y_coord + 7'b0000100;
-	6X[23] = x_coord + 7'b0000011;
-	6Y[23] = y_coord + 7'b0000100;
-	6X[24] = x_coord + 7'b0000100;
-	6Y[24] = y_coord + 7'b0000100;
-	6X[25] = x_coord + 7'b0000101;
-	6Y[25] = y_coord + 7'b0000100;
-	6X[26] = x_coord ;
-	6Y[26] = y_coord + 7'b0000101;
-	6X[27] = x_coord + 7'b0000001;
-	6Y[27] = y_coord + 7'b0000101;
-	6X[28] = x_coord + 7'b0000100;
-	6Y[28] = y_coord + 7'b0000101;
-	6X[29] = x_coord + 7'b0000101;
-	6Y[29] = y_coord + 7'b0000101;
-	6X[30] = x_coord ;
-	6Y[30] = y_coord + 7'b0000110;
-	6X[31] = x_coord + 7'b0000001;
-	6Y[31] = y_coord + 7'b0000110;
-	6X[32] = x_coord + 7'b0000010;
-	6Y[32] = y_coord + 7'b0000110;
-	6X[33] = x_coord + 7'b0000011;
-	6Y[33] = y_coord + 7'b0000110;
-	6X[34] = x_coord + 7'b0000100;
-	6Y[34] = y_coord + 7'b0000110;
-	6X[35] = x_coord + 7'b0000101;
-	6Y[35] = y_coord + 7'b0000110;
-	6X[36] = x_coord ;
-	6Y[36] = y_coord + 7'b0000111;
-	6X[37] = x_coord + 7'b0000001;
-	6Y[37] = y_coord + 7'b0000111;
-	6X[38] = x_coord + 7'b0000010;
-	6Y[38] = y_coord + 7'b0000111;
-	6X[39] = x_coord + 7'b0000011;
-	6Y[39] = y_coord + 7'b0000111;
-	6X[40] = x_coord + 7'b0000100;
-	6Y[40] = y_coord + 7'b0000111;
-	6X[41] = x_coord + 7'b0000101;
-	6Y[41] = y_coord + 7'b0000111;
+	C6X[0] = x_coord ;
+	C6Y[0] = y_coord ;
+	C6X[1] = x_coord + 7'b0000001;
+	C6Y[1] = y_coord ;
+	C6X[2] = x_coord + 7'b0000010;
+	C6Y[2] = y_coord ;
+	C6X[3] = x_coord + 7'b0000011;
+	C6Y[3] = y_coord ;
+	C6X[4] = x_coord + 7'b0000100;
+	C6Y[4] = y_coord ;
+	C6X[5] = x_coord + 7'b0000101;
+	C6Y[5] = y_coord ;
+	C6X[6] = x_coord ;
+	C6Y[6] = y_coord + 7'b0000001;
+	C6X[7] = x_coord + 7'b0000001;
+	C6Y[7] = y_coord + 7'b0000001;
+	C6X[8] = x_coord + 7'b0000010;
+	C6Y[8] = y_coord + 7'b0000001;
+	C6X[9] = x_coord + 7'b0000011;
+	C6Y[9] = y_coord + 7'b0000001;
+	C6X[10] = x_coord + 7'b0000100;
+	C6Y[10] = y_coord + 7'b0000001;
+	C6X[11] = x_coord + 7'b0000101;
+	C6Y[11] = y_coord + 7'b0000001;
+	C6X[12] = x_coord ;
+	C6Y[12] = y_coord + 7'b0000010;
+	C6X[13] = x_coord + 7'b0000001;
+	C6Y[13] = y_coord + 7'b0000010;
+	C6X[14] = x_coord ;
+	C6Y[14] = y_coord + 7'b0000011;
+	C6X[15] = x_coord + 7'b0000001;
+	C6Y[15] = y_coord + 7'b0000011;
+	C6X[16] = x_coord + 7'b0000010;
+	C6Y[16] = y_coord + 7'b0000011;
+	C6X[17] = x_coord + 7'b0000011;
+	C6Y[17] = y_coord + 7'b0000011;
+	C6X[18] = x_coord + 7'b0000100;
+	C6Y[18] = y_coord + 7'b0000011;
+	C6X[19] = x_coord + 7'b0000101;
+	C6Y[19] = y_coord + 7'b0000011;
+	C6X[20] = x_coord ;
+	C6Y[20] = y_coord + 7'b0000100;
+	C6X[21] = x_coord + 7'b0000001;
+	C6Y[21] = y_coord + 7'b0000100;
+	C6X[22] = x_coord + 7'b0000010;
+	C6Y[22] = y_coord + 7'b0000100;
+	C6X[23] = x_coord + 7'b0000011;
+	C6Y[23] = y_coord + 7'b0000100;
+	C6X[24] = x_coord + 7'b0000100;
+	C6Y[24] = y_coord + 7'b0000100;
+	C6X[25] = x_coord + 7'b0000101;
+	C6Y[25] = y_coord + 7'b0000100;
+	C6X[26] = x_coord ;
+	C6Y[26] = y_coord + 7'b0000101;
+	C6X[27] = x_coord + 7'b0000001;
+	C6Y[27] = y_coord + 7'b0000101;
+	C6X[28] = x_coord + 7'b0000100;
+	C6Y[28] = y_coord + 7'b0000101;
+	C6X[29] = x_coord + 7'b0000101;
+	C6Y[29] = y_coord + 7'b0000101;
+	C6X[30] = x_coord ;
+	C6Y[30] = y_coord + 7'b0000110;
+	C6X[31] = x_coord + 7'b0000001;
+	C6Y[31] = y_coord + 7'b0000110;
+	C6X[32] = x_coord + 7'b0000010;
+	C6Y[32] = y_coord + 7'b0000110;
+	C6X[33] = x_coord + 7'b0000011;
+	C6Y[33] = y_coord + 7'b0000110;
+	C6X[34] = x_coord + 7'b0000100;
+	C6Y[34] = y_coord + 7'b0000110;
+	C6X[35] = x_coord + 7'b0000101;
+	C6Y[35] = y_coord + 7'b0000110;
+	C6X[36] = x_coord ;
+	C6Y[36] = y_coord + 7'b0000111;
+	C6X[37] = x_coord + 7'b0000001;
+	C6Y[37] = y_coord + 7'b0000111;
+	C6X[38] = x_coord + 7'b0000010;
+	C6Y[38] = y_coord + 7'b0000111;
+	C6X[39] = x_coord + 7'b0000011;
+	C6Y[39] = y_coord + 7'b0000111;
+	C6X[40] = x_coord + 7'b0000100;
+	C6Y[40] = y_coord + 7'b0000111;
+	C6X[41] = x_coord + 7'b0000101;
+	C6Y[41] = y_coord + 7'b0000111;
 
 	//// character 7
-	7X[0] = x_coord ;
-	7Y[0] = y_coord ;
-	7X[1] = x_coord + 7'b0000001;
-	7Y[1] = y_coord ;
-	7X[2] = x_coord + 7'b0000010;
-	7Y[2] = y_coord ;
-	7X[3] = x_coord + 7'b0000011;
-	7Y[3] = y_coord ;
-	7X[4] = x_coord + 7'b0000100;
-	7Y[4] = y_coord ;
-	7X[5] = x_coord + 7'b0000101;
-	7Y[5] = y_coord ;
-	7X[6] = x_coord ;
-	7Y[6] = y_coord + 7'b0000001;
-	7X[7] = x_coord + 7'b0000001;
-	7Y[7] = y_coord + 7'b0000001;
-	7X[8] = x_coord + 7'b0000010;
-	7Y[8] = y_coord + 7'b0000001;
-	7X[9] = x_coord + 7'b0000011;
-	7Y[9] = y_coord + 7'b0000001;
-	7X[10] = x_coord + 7'b0000100;
-	7Y[10] = y_coord + 7'b0000001;
-	7X[11] = x_coord + 7'b0000101;
-	7Y[11] = y_coord + 7'b0000001;
-	7X[12] = x_coord ;
-	7Y[12] = y_coord + 7'b0000010;
-	7X[13] = x_coord + 7'b0000001;
-	7Y[13] = y_coord + 7'b0000010;
-	7X[14] = x_coord + 7'b0000100;
-	7Y[14] = y_coord + 7'b0000010;
-	7X[15] = x_coord + 7'b0000101;
-	7Y[15] = y_coord + 7'b0000010;
-	7X[16] = x_coord + 7'b0000100;
-	7Y[16] = y_coord + 7'b0000011;
-	7X[17] = x_coord + 7'b0000101;
-	7Y[17] = y_coord + 7'b0000011;
-	7X[18] = x_coord + 7'b0000100;
-	7Y[18] = y_coord + 7'b0000100;
-	7X[19] = x_coord + 7'b0000101;
-	7Y[19] = y_coord + 7'b0000100;
-	7X[20] = x_coord + 7'b0000100;
-	7Y[20] = y_coord + 7'b0000101;
-	7X[21] = x_coord + 7'b0000101;
-	7Y[21] = y_coord + 7'b0000101;
-	7X[22] = x_coord + 7'b0000100;
-	7Y[22] = y_coord + 7'b0000110;
-	7X[23] = x_coord + 7'b0000101;
-	7Y[23] = y_coord + 7'b0000110;
-	7X[24] = x_coord + 7'b0000100;
-	7Y[24] = y_coord + 7'b0000111;
-	7X[25] = x_coord + 7'b0000101;
-	7Y[25] = y_coord + 7'b0000111;
+	C7X[0] = x_coord ;
+	C7Y[0] = y_coord ;
+	C7X[1] = x_coord + 7'b0000001;
+	C7Y[1] = y_coord ;
+	C7X[2] = x_coord + 7'b0000010;
+	C7Y[2] = y_coord ;
+	C7X[3] = x_coord + 7'b0000011;
+	C7Y[3] = y_coord ;
+	C7X[4] = x_coord + 7'b0000100;
+	C7Y[4] = y_coord ;
+	C7X[5] = x_coord + 7'b0000101;
+	C7Y[5] = y_coord ;
+	C7X[6] = x_coord ;
+	C7Y[6] = y_coord + 7'b0000001;
+	C7X[7] = x_coord + 7'b0000001;
+	C7Y[7] = y_coord + 7'b0000001;
+	C7X[8] = x_coord + 7'b0000010;
+	C7Y[8] = y_coord + 7'b0000001;
+	C7X[9] = x_coord + 7'b0000011;
+	C7Y[9] = y_coord + 7'b0000001;
+	C7X[10] = x_coord + 7'b0000100;
+	C7Y[10] = y_coord + 7'b0000001;
+	C7X[11] = x_coord + 7'b0000101;
+	C7Y[11] = y_coord + 7'b0000001;
+	C7X[12] = x_coord ;
+	C7Y[12] = y_coord + 7'b0000010;
+	C7X[13] = x_coord + 7'b0000001;
+	C7Y[13] = y_coord + 7'b0000010;
+	C7X[14] = x_coord + 7'b0000100;
+	C7Y[14] = y_coord + 7'b0000010;
+	C7X[15] = x_coord + 7'b0000101;
+	C7Y[15] = y_coord + 7'b0000010;
+	C7X[16] = x_coord + 7'b0000100;
+	C7Y[16] = y_coord + 7'b0000011;
+	C7X[17] = x_coord + 7'b0000101;
+	C7Y[17] = y_coord + 7'b0000011;
+	C7X[18] = x_coord + 7'b0000100;
+	C7Y[18] = y_coord + 7'b0000100;
+	C7X[19] = x_coord + 7'b0000101;
+	C7Y[19] = y_coord + 7'b0000100;
+	C7X[20] = x_coord + 7'b0000100;
+	C7Y[20] = y_coord + 7'b0000101;
+	C7X[21] = x_coord + 7'b0000101;
+	C7Y[21] = y_coord + 7'b0000101;
+	C7X[22] = x_coord + 7'b0000100;
+	C7Y[22] = y_coord + 7'b0000110;
+	C7X[23] = x_coord + 7'b0000101;
+	C7Y[23] = y_coord + 7'b0000110;
+	C7X[24] = x_coord + 7'b0000100;
+	C7Y[24] = y_coord + 7'b0000111;
+	C7X[25] = x_coord + 7'b0000101;
+	C7Y[25] = y_coord + 7'b0000111;
 
 	//// character 8
-	8X[0] = x_coord ;
-	8Y[0] = y_coord ;
-	8X[1] = x_coord + 7'b0000001;
-	8Y[1] = y_coord ;
-	8X[2] = x_coord + 7'b0000010;
-	8Y[2] = y_coord ;
-	8X[3] = x_coord + 7'b0000011;
-	8Y[3] = y_coord ;
-	8X[4] = x_coord + 7'b0000100;
-	8Y[4] = y_coord ;
-	8X[5] = x_coord + 7'b0000101;
-	8Y[5] = y_coord ;
-	8X[6] = x_coord ;
-	8Y[6] = y_coord + 7'b0000001;
-	8X[7] = x_coord + 7'b0000001;
-	8Y[7] = y_coord + 7'b0000001;
-	8X[8] = x_coord + 7'b0000010;
-	8Y[8] = y_coord + 7'b0000001;
-	8X[9] = x_coord + 7'b0000011;
-	8Y[9] = y_coord + 7'b0000001;
-	8X[10] = x_coord + 7'b0000100;
-	8Y[10] = y_coord + 7'b0000001;
-	8X[11] = x_coord + 7'b0000101;
-	8Y[11] = y_coord + 7'b0000001;
-	8X[12] = x_coord ;
-	8Y[12] = y_coord + 7'b0000010;
-	8X[13] = x_coord + 7'b0000001;
-	8Y[13] = y_coord + 7'b0000010;
-	8X[14] = x_coord + 7'b0000100;
-	8Y[14] = y_coord + 7'b0000010;
-	8X[15] = x_coord + 7'b0000101;
-	8Y[15] = y_coord + 7'b0000010;
-	8X[16] = x_coord ;
-	8Y[16] = y_coord + 7'b0000011;
-	8X[17] = x_coord + 7'b0000001;
-	8Y[17] = y_coord + 7'b0000011;
-	8X[18] = x_coord + 7'b0000010;
-	8Y[18] = y_coord + 7'b0000011;
-	8X[19] = x_coord + 7'b0000011;
-	8Y[19] = y_coord + 7'b0000011;
-	8X[20] = x_coord + 7'b0000100;
-	8Y[20] = y_coord + 7'b0000011;
-	8X[21] = x_coord + 7'b0000101;
-	8Y[21] = y_coord + 7'b0000011;
-	8X[22] = x_coord ;
-	8Y[22] = y_coord + 7'b0000100;
-	8X[23] = x_coord + 7'b0000001;
-	8Y[23] = y_coord + 7'b0000100;
-	8X[24] = x_coord + 7'b0000010;
-	8Y[24] = y_coord + 7'b0000100;
-	8X[25] = x_coord + 7'b0000011;
-	8Y[25] = y_coord + 7'b0000100;
-	8X[26] = x_coord + 7'b0000100;
-	8Y[26] = y_coord + 7'b0000100;
-	8X[27] = x_coord + 7'b0000101;
-	8Y[27] = y_coord + 7'b0000100;
-	8X[28] = x_coord ;
-	8Y[28] = y_coord + 7'b0000101;
-	8X[29] = x_coord + 7'b0000001;
-	8Y[29] = y_coord + 7'b0000101;
-	8X[30] = x_coord + 7'b0000100;
-	8Y[30] = y_coord + 7'b0000101;
-	8X[31] = x_coord + 7'b0000101;
-	8Y[31] = y_coord + 7'b0000101;
-	8X[32] = x_coord ;
-	8Y[32] = y_coord + 7'b0000110;
-	8X[33] = x_coord + 7'b0000001;
-	8Y[33] = y_coord + 7'b0000110;
-	8X[34] = x_coord + 7'b0000010;
-	8Y[34] = y_coord + 7'b0000110;
-	8X[35] = x_coord + 7'b0000011;
-	8Y[35] = y_coord + 7'b0000110;
-	8X[36] = x_coord + 7'b0000100;
-	8Y[36] = y_coord + 7'b0000110;
-	8X[37] = x_coord + 7'b0000101;
-	8Y[37] = y_coord + 7'b0000110;
-	8X[38] = x_coord ;
-	8Y[38] = y_coord + 7'b0000111;
-	8X[39] = x_coord + 7'b0000001;
-	8Y[39] = y_coord + 7'b0000111;
-	8X[40] = x_coord + 7'b0000010;
-	8Y[40] = y_coord + 7'b0000111;
-	8X[41] = x_coord + 7'b0000011;
-	8Y[41] = y_coord + 7'b0000111;
-	8X[42] = x_coord + 7'b0000100;
-	8Y[42] = y_coord + 7'b0000111;
-	8X[43] = x_coord + 7'b0000101;
-	8Y[43] = y_coord + 7'b0000111;	
+	C8X[0] = x_coord ;
+	C8Y[0] = y_coord ;
+	C8X[1] = x_coord + 7'b0000001;
+	C8Y[1] = y_coord ;
+	C8X[2] = x_coord + 7'b0000010;
+	C8Y[2] = y_coord ;
+	C8X[3] = x_coord + 7'b0000011;
+	C8Y[3] = y_coord ;
+	C8X[4] = x_coord + 7'b0000100;
+	C8Y[4] = y_coord ;
+	C8X[5] = x_coord + 7'b0000101;
+	C8Y[5] = y_coord ;
+	C8X[6] = x_coord ;
+	C8Y[6] = y_coord + 7'b0000001;
+	C8X[7] = x_coord + 7'b0000001;
+	C8Y[7] = y_coord + 7'b0000001;
+	C8X[8] = x_coord + 7'b0000010;
+	C8Y[8] = y_coord + 7'b0000001;
+	C8X[9] = x_coord + 7'b0000011;
+	C8Y[9] = y_coord + 7'b0000001;
+	C8X[10] = x_coord + 7'b0000100;
+	C8Y[10] = y_coord + 7'b0000001;
+	C8X[11] = x_coord + 7'b0000101;
+	C8Y[11] = y_coord + 7'b0000001;
+	C8X[12] = x_coord ;
+	C8Y[12] = y_coord + 7'b0000010;
+	C8X[13] = x_coord + 7'b0000001;
+	C8Y[13] = y_coord + 7'b0000010;
+	C8X[14] = x_coord + 7'b0000100;
+	C8Y[14] = y_coord + 7'b0000010;
+	C8X[15] = x_coord + 7'b0000101;
+	C8Y[15] = y_coord + 7'b0000010;
+	C8X[16] = x_coord ;
+	C8Y[16] = y_coord + 7'b0000011;
+	C8X[17] = x_coord + 7'b0000001;
+	C8Y[17] = y_coord + 7'b0000011;
+	C8X[18] = x_coord + 7'b0000010;
+	C8Y[18] = y_coord + 7'b0000011;
+	C8X[19] = x_coord + 7'b0000011;
+	C8Y[19] = y_coord + 7'b0000011;
+	C8X[20] = x_coord + 7'b0000100;
+	C8Y[20] = y_coord + 7'b0000011;
+	C8X[21] = x_coord + 7'b0000101;
+	C8Y[21] = y_coord + 7'b0000011;
+	C8X[22] = x_coord ;
+	C8Y[22] = y_coord + 7'b0000100;
+	C8X[23] = x_coord + 7'b0000001;
+	C8Y[23] = y_coord + 7'b0000100;
+	C8X[24] = x_coord + 7'b0000010;
+	C8Y[24] = y_coord + 7'b0000100;
+	C8X[25] = x_coord + 7'b0000011;
+	C8Y[25] = y_coord + 7'b0000100;
+	C8X[26] = x_coord + 7'b0000100;
+	C8Y[26] = y_coord + 7'b0000100;
+	C8X[27] = x_coord + 7'b0000101;
+	C8Y[27] = y_coord + 7'b0000100;
+	C8X[28] = x_coord ;
+	C8Y[28] = y_coord + 7'b0000101;
+	C8X[29] = x_coord + 7'b0000001;
+	C8Y[29] = y_coord + 7'b0000101;
+	C8X[30] = x_coord + 7'b0000100;
+	C8Y[30] = y_coord + 7'b0000101;
+	C8X[31] = x_coord + 7'b0000101;
+	C8Y[31] = y_coord + 7'b0000101;
+	C8X[32] = x_coord ;
+	C8Y[32] = y_coord + 7'b0000110;
+	C8X[33] = x_coord + 7'b0000001;
+	C8Y[33] = y_coord + 7'b0000110;
+	C8X[34] = x_coord + 7'b0000010;
+	C8Y[34] = y_coord + 7'b0000110;
+	C8X[35] = x_coord + 7'b0000011;
+	C8Y[35] = y_coord + 7'b0000110;
+	C8X[36] = x_coord + 7'b0000100;
+	C8Y[36] = y_coord + 7'b0000110;
+	C8X[37] = x_coord + 7'b0000101;
+	C8Y[37] = y_coord + 7'b0000110;
+	C8X[38] = x_coord ;
+	C8Y[38] = y_coord + 7'b0000111;
+	C8X[39] = x_coord + 7'b0000001;
+	C8Y[39] = y_coord + 7'b0000111;
+	C8X[40] = x_coord + 7'b0000010;
+	C8Y[40] = y_coord + 7'b0000111;
+	C8X[41] = x_coord + 7'b0000011;
+	C8Y[41] = y_coord + 7'b0000111;
+	C8X[42] = x_coord + 7'b0000100;
+	C8Y[42] = y_coord + 7'b0000111;
+	C8X[43] = x_coord + 7'b0000101;
+	C8Y[43] = y_coord + 7'b0000111;	
 
 	//// character 9
-	9X[0] = x_coord ;
-	9Y[0] = y_coord ;
-	9X[1] = x_coord + 7'b0000001;
-	9Y[1] = y_coord ;
-	9X[2] = x_coord + 7'b0000010;
-	9Y[2] = y_coord ;
-	9X[3] = x_coord + 7'b0000011;
-	9Y[3] = y_coord ;
-	9X[4] = x_coord + 7'b0000100;
-	9Y[4] = y_coord ;
-	9X[5] = x_coord + 7'b0000101;
-	9Y[5] = y_coord ;
-	9X[6] = x_coord ;
-	9Y[6] = y_coord + 7'b0000001;
-	9X[7] = x_coord + 7'b0000001;
-	9Y[7] = y_coord + 7'b0000001;
-	9X[8] = x_coord + 7'b0000010;
-	9Y[8] = y_coord + 7'b0000001;
-	9X[9] = x_coord + 7'b0000011;
-	9Y[9] = y_coord + 7'b0000001;
-	9X[10] = x_coord + 7'b0000100;
-	9Y[10] = y_coord + 7'b0000001;
-	9X[11] = x_coord + 7'b0000101;
-	9Y[11] = y_coord + 7'b0000001;
-	9X[12] = x_coord ;
-	9Y[12] = y_coord + 7'b0000010;
-	9X[13] = x_coord + 7'b0000001;
-	9Y[13] = y_coord + 7'b0000010;
-	9X[14] = x_coord + 7'b0000100;
-	9Y[14] = y_coord + 7'b0000010;
-	9X[15] = x_coord + 7'b0000101;
-	9Y[15] = y_coord + 7'b0000010;
-	9X[16] = x_coord ;
-	9Y[16] = y_coord + 7'b0000011;
-	9X[17] = x_coord + 7'b0000001;
-	9Y[17] = y_coord + 7'b0000011;
-	9X[18] = x_coord + 7'b0000010;
-	9Y[18] = y_coord + 7'b0000011;
-	9X[19] = x_coord + 7'b0000011;
-	9Y[19] = y_coord + 7'b0000011;
-	9X[20] = x_coord + 7'b0000100;
-	9Y[20] = y_coord + 7'b0000011;
-	9X[21] = x_coord + 7'b0000101;
-	9Y[21] = y_coord + 7'b0000011;
-	9X[22] = x_coord ;
-	9Y[22] = y_coord + 7'b0000100;
-	9X[23] = x_coord + 7'b0000001;
-	9Y[23] = y_coord + 7'b0000100;
-	9X[24] = x_coord + 7'b0000010;
-	9Y[24] = y_coord + 7'b0000100;
-	9X[25] = x_coord + 7'b0000011;
-	9Y[25] = y_coord + 7'b0000100;
-	9X[26] = x_coord + 7'b0000100;
-	9Y[26] = y_coord + 7'b0000100;
-	9X[27] = x_coord + 7'b0000101;
-	9Y[27] = y_coord + 7'b0000100;
-	9X[28] = x_coord + 7'b0000100;
-	9Y[28] = y_coord + 7'b0000101;
-	9X[29] = x_coord + 7'b0000101;
-	9Y[29] = y_coord + 7'b0000101;
-	9X[30] = x_coord + 7'b0000100;
-	9Y[30] = y_coord + 7'b0000110;
-	9X[31] = x_coord + 7'b0000101;
-	9Y[31] = y_coord + 7'b0000110;
-	9X[32] = x_coord + 7'b0000100;
-	9Y[32] = y_coord + 7'b0000111;
-	9X[33] = x_coord + 7'b0000101;
-	9Y[33] = y_coord + 7'b0000111;
+	C9X[0] = x_coord ;
+	C9Y[0] = y_coord ;
+	C9X[1] = x_coord + 7'b0000001;
+	C9Y[1] = y_coord ;
+	C9X[2] = x_coord + 7'b0000010;
+	C9Y[2] = y_coord ;
+	C9X[3] = x_coord + 7'b0000011;
+	C9Y[3] = y_coord ;
+	C9X[4] = x_coord + 7'b0000100;
+	C9Y[4] = y_coord ;
+	C9X[5] = x_coord + 7'b0000101;
+	C9Y[5] = y_coord ;
+	C9X[6] = x_coord ;
+	C9Y[6] = y_coord + 7'b0000001;
+	C9X[7] = x_coord + 7'b0000001;
+	C9Y[7] = y_coord + 7'b0000001;
+	C9X[8] = x_coord + 7'b0000010;
+	C9Y[8] = y_coord + 7'b0000001;
+	C9X[9] = x_coord + 7'b0000011;
+	C9Y[9] = y_coord + 7'b0000001;
+	C9X[10] = x_coord + 7'b0000100;
+	C9Y[10] = y_coord + 7'b0000001;
+	C9X[11] = x_coord + 7'b0000101;
+	C9Y[11] = y_coord + 7'b0000001;
+	C9X[12] = x_coord ;
+	C9Y[12] = y_coord + 7'b0000010;
+	C9X[13] = x_coord + 7'b0000001;
+	C9Y[13] = y_coord + 7'b0000010;
+	C9X[14] = x_coord + 7'b0000100;
+	C9Y[14] = y_coord + 7'b0000010;
+	C9X[15] = x_coord + 7'b0000101;
+	C9Y[15] = y_coord + 7'b0000010;
+	C9X[16] = x_coord ;
+	C9Y[16] = y_coord + 7'b0000011;
+	C9X[17] = x_coord + 7'b0000001;
+	C9Y[17] = y_coord + 7'b0000011;
+	C9X[18] = x_coord + 7'b0000010;
+	C9Y[18] = y_coord + 7'b0000011;
+	C9X[19] = x_coord + 7'b0000011;
+	C9Y[19] = y_coord + 7'b0000011;
+	C9X[20] = x_coord + 7'b0000100;
+	C9Y[20] = y_coord + 7'b0000011;
+	C9X[21] = x_coord + 7'b0000101;
+	C9Y[21] = y_coord + 7'b0000011;
+	C9X[22] = x_coord ;
+	C9Y[22] = y_coord + 7'b0000100;
+	C9X[23] = x_coord + 7'b0000001;
+	C9Y[23] = y_coord + 7'b0000100;
+	C9X[24] = x_coord + 7'b0000010;
+	C9Y[24] = y_coord + 7'b0000100;
+	C9X[25] = x_coord + 7'b0000011;
+	C9Y[25] = y_coord + 7'b0000100;
+	C9X[26] = x_coord + 7'b0000100;
+	C9Y[26] = y_coord + 7'b0000100;
+	C9X[27] = x_coord + 7'b0000101;
+	C9Y[27] = y_coord + 7'b0000100;
+	C9X[28] = x_coord + 7'b0000100;
+	C9Y[28] = y_coord + 7'b0000101;
+	C9X[29] = x_coord + 7'b0000101;
+	C9Y[29] = y_coord + 7'b0000101;
+	C9X[30] = x_coord + 7'b0000100;
+	C9Y[30] = y_coord + 7'b0000110;
+	C9X[31] = x_coord + 7'b0000101;
+	C9Y[31] = y_coord + 7'b0000110;
+	C9X[32] = x_coord + 7'b0000100;
+	C9Y[32] = y_coord + 7'b0000111;
+	C9X[33] = x_coord + 7'b0000101;
+	C9Y[33] = y_coord + 7'b0000111;
 
 	//// character J
 	JX[0] = x_coord + 7'b0000100;
@@ -1415,193 +1448,246 @@ module drawcharacter(CLOCK_50, x_coord, y_coord, colour_in, character, x_out, y_
 	// for each character/state loop through the correct amount of pixels and output to x and y outs
 		case (state)
 			C0: begin
-				if (counter < 39) begin
-					x_out = 0X[counter];
-					y_out = 0Y[counter][6:0];
+				if (counter <= 6'b100111) begin
+					x_out = C0X[counter];
+					y_out = C0Y[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
-					x_out = 0X[0];
-					y_out = 0Y[0][6:0];
+					counter = 6'b000000;
+					x_out = C0X[0];
+					y_out = C0Y[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			C1: begin
-				if (counter < 15) begin
-					x_out = 1X[counter];
-					y_out = 1Y[counter][6:0];
+				if (counter <= 6'b001111) begin
+					x_out = C1X[counter];
+					y_out = C1Y[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
-					x_out = 1X[0];
-					y_out = 1Y[0][6:0];
+					counter = 6'b000000;
+					x_out = C1X[0];
+					y_out = C1Y[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			C2: begin
-				if (counter < 39) begin
-					x_out = 2X[counter];
-					y_out = 2Y[counter][6:0];
+				if (counter <= 6'b100111) begin
+					x_out = C2X[counter];
+					y_out = C2Y[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
-					x_out = 2X[0];
-					y_out = 2Y[0][6:0];
+					counter = 6'b000000;
+					x_out = C2X[0];
+					y_out = C2Y[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			C3: begin
-				if (counter < 39) begin
-					x_out = 3X[counter];
-					y_out = 3Y[counter][6:0];
+				if (counter <= 6'b100111) begin
+					x_out = C3X[counter];
+					y_out = C3Y[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
-					x_out = 3X[0];
-					y_out = 3Y[0][6:0];
+					counter = 6'b000000;
+					x_out = C3X[0];
+					y_out = C3Y[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			C4: begin
-				if (counter < 29) begin
-					x_out = 4X[counter];
-					y_out = 4Y[counter][6:0];
+				if (counter <= 6'b011101) begin
+					x_out = C4X[counter];
+					y_out = C4Y[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
-					x_out = 4X[0];
-					y_out = 4Y[0][6:0];
+					counter = 6'b000000;
+					x_out = C4X[0];
+					y_out = C4Y[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			C5: begin
-				if (counter < 39) begin
-					x_out = 5X[counter];
-					y_out = 5Y[counter][6:0];
+				if (counter <= 6'b100111) begin
+					x_out = C5X[counter];
+					y_out = C5Y[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
-					x_out = 5X[0];
-					y_out = 5Y[0][6:0];
+					counter = 6'b000000;
+					x_out = C5X[0];
+					y_out = C5Y[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			C6: begin
-				if (counter < 41) begin
-					x_out = 6X[counter];
-					y_out = 6Y[counter][6:0];
+				if (counter <= 6'b101001) begin
+					x_out = C6X[counter];
+					y_out = C6Y[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
-					x_out = 6X[0];
-					y_out = 6Y[0][6:0];
+					counter = 6'b000000;
+					x_out = C6X[0];
+					y_out = C6Y[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			C7: begin
-				if (counter < 25) begin
-					x_out = 7X[counter];
-					y_out = 7Y[counter][6:0];
+				if (counter <= 6'b011001) begin
+					x_out = C7X[counter];
+					y_out = C7Y[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
-					x_out = 7X[0];
-					y_out = 7Y[0][6:0];
+					counter = 6'b000000;
+					x_out = C7X[0];
+					y_out = C7Y[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			C8: begin
-				if (counter < 43) begin
-					x_out = 8X[counter];
-					y_out = 8Y[counter][6:0];
+				if (counter <= 6'b101011 ) begin
+					x_out = C8X[counter];
+					y_out = C8Y[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
-					x_out = 8X[0];
-					y_out = 8Y[0][6:0];
+					counter = 6'b000000;
+					x_out = C8X[0];
+					y_out = C8Y[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			C9: begin
-				if (counter < 33) begin
-					x_out = 9X[counter];
-					y_out = 9Y[counter][6:0];
+				if (counter <= 6'b100001) begin
+					x_out = C9X[counter];
+					y_out = C9Y[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
-					x_out = 9X[0];
-					y_out = 9Y[0][6:0];
+					counter = 6'b000000;
+					x_out = C9X[0];
+					y_out = C9Y[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			CJ: begin
-				if (counter < 23) begin
+				if (counter <= 6'b010111) begin
 					x_out = JX[counter];
 					y_out = JY[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
+					counter = 6'b000000;
 					x_out = JX[0];
 					y_out = JY[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			CQ: begin
-				if (counter < 37) begin
+				if (counter <= 6'b100101) begin
 					x_out = QX[counter];
 					y_out = QY[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
+					counter = 6'b000000;
 					x_out = QX[0];
 					y_out = QY[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			CK: begin
-				if (counter < 31) begin
+				if (counter <= 6'b011111) begin
 					x_out = KX[counter];
 					y_out = KY[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
+					counter = 6'b000000;
 					x_out = KX[0];
 					y_out = KY[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			CH: begin
-				if (counter < 35) begin
+				if (counter <= 6'b100011) begin
 					x_out = HX[counter];
 					y_out = HY[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
+					counter = 6'b000000;
 					x_out = HX[0];
 					y_out = HY[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			CC: begin
-				if (counter < 31) begin
+				if (counter <= 6'b011111) begin
 					x_out = CX[counter];
 					y_out = CY[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
+					counter = 6'b000000;
 					x_out = CX[0];
 					y_out = CY[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			CS: begin
-				if (counter < 37) begin
+				if (counter <= 6'b100101) begin
 					x_out = SX[counter];
 					y_out = SY[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
+					counter = 6'b000000;
 					x_out = SX[0];
 					y_out = SY[0][6:0];
+					counter = counter + 1'b1;
 				end
 			end
 			CD: begin
-				if (counter < 37) begin
+				if (counter <= 6'b100101) begin
 					x_out = DX[counter];
 					y_out = DY[counter][6:0];
+					counter = counter + 1'b1;
 				end
 				else begin
-					counter = 0;
+					counter = 6'b000000;
 					x_out = DX[0];
 					y_out = DY[0][6:0];
+					counter = counter + 1'b1;
+					
 				end
 			end
+			default: begin
+				if (counter <= 6'b100101) begin
+					x_out = DX[counter];
+					y_out = DY[counter][6:0];
+					counter = counter + 1'b1;
+				end
+				else begin
+					counter = 6'b000000;
+					x_out = DX[0];
+					y_out = DY[0][6:0];
+					counter = counter + 1'b1;
+					
+				end
+			end
+		endcase
+		
+
 	end
 
 
 endmodule
+
