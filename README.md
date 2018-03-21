@@ -2,7 +2,7 @@
 Verilog implementation of a basic two player game of Blackjack
 
 ## a note on drawui.v modules:
-  
+  If you wish to use these modules please cite them properly.
   ### drawcharacter module:
       -the general gist of this module to is to take in a x coordinate, y coordinate, colour value, and character value, and use it to draw the given character at the given x,y coordinate with the given colour.
       -it draws each pixel one by one from the hardcoded register values -> looping 2x 1D arrays (one for x and one for y) which go through each x,y coordinate set and pass them to the VGA on each clock cycle
