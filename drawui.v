@@ -13,8 +13,7 @@ module drawui (character, // input character value
 		VGA_SYNC_N,						//	VGA SYNC
 		VGA_R,   						//	VGA Red[9:0]
 		VGA_G,	 						//	VGA Green[9:0]
-		VGA_B,   						//	VGA Blue[9:0]
-		
+		VGA_B   						//	VGA Blue[9:0]
 		);
 	input 	[4:0] character; // 5bit character value, reference table below
 	input			CLOCK_50;				//	50 MHz
@@ -279,6 +278,9 @@ module drawui (character, // input character value
 				char_colour = 3'b000;
 				state = DRAW_LSCORE_1;
 			end
+		default: begin
+			state = DRAW_LSCORE_1;
+		end
 		endcase
 	 end
 
