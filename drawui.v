@@ -105,10 +105,9 @@ module drawui (character, // input character value
 		.y_out(y),
 		.colour_out(colour));
 	
-	reg [5:0] state;
+	reg [5:0] state = DRAW_LSCORE_1;
 	// check for cases
 	// this one big loop that continuously draws the GUI
-	initial state = DRAW_LSCORE_1;
 	 always@(posedge CLOCK_50)
 	 begin
 		case (state)
