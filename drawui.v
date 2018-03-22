@@ -1,10 +1,18 @@
-
-
-module drawui (character, // input character value
-		CLOCK_50,						//	On Board 50 MHz
-		// Your inputs and outputs here
-        KEY,
-        SW,
+module drawui (LSCORE_1, // input character values
+		LSCORE_2,
+		LSCORE_3,
+		RSCORE_1,
+		RSCORE_2,
+		RSCORE_3,
+		LCARD_1,
+		LCARD_2,
+		RCARD_1,
+		RCARD_2,
+		LTOTAL_,
+		LTOTAL_2,
+		RTOTAL_1,
+		RTOTAL_2, 
+		CLOCK_50,//	On Board 50 MHz
 		// The ports below are for the VGA output.  Do not change.
 		VGA_CLK,   						//	VGA Clock
 		VGA_HS,							//	VGA H_SYNC
@@ -13,12 +21,25 @@ module drawui (character, // input character value
 		VGA_SYNC_N,						//	VGA SYNC
 		VGA_R,   						//	VGA Red[9:0]
 		VGA_G,	 						//	VGA Green[9:0]
-		VGA_B   						//	VGA Blue[9:0]
+		VGA_B,   						//	VGA Blue[9:0]
+		
 		);
-	input 	[4:0] character; // 5bit character value, reference table below
+	input 	[4:0] LSCORE_1; // 5bit character value, reference table below
+	input 	[4:0] LSCORE_2;
+	input 	[4:0] LSCORE_3;
+	input 	[4:0] RSCORE_1;
+	input 	[4:0] RSCORE_2;
+	input 	[4:0] RSCORE_3;
+	input 	[4:0] LCARD_1;
+	input 	[4:0] LCARD_2;
+	input 	[4:0] RCARD_1;
+	input 	[4:0] RCARD_2;
+	input 	[4:0] LTOTAL_;
+	input 	[4:0] LTOTAL_2;
+	input 	[4:0] RTOTAL_1;
+	input 	[4:0] RTOTAL_2 ;
+
 	input			CLOCK_50;				//	50 MHz
-	input   [9:0]   SW;
-	input   [3:0]   KEY;
 
 	// Declare your inputs and outputs here
 	// Do not change the following outputs
@@ -35,7 +56,7 @@ module drawui (character, // input character value
 	wire [2:0] colour;
 	wire [7:0] x;
 	wire [6:0] y;
-
+	
 	// the vga module
 	vga_adapter VGA(
 			.resetn(1'b1),
@@ -56,7 +77,7 @@ module drawui (character, // input character value
 		defparam VGA.RESOLUTION = "160x120";
 		defparam VGA.MONOCHROME = "FALSE";
 		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
-		defparam VGA.BACKGROUND_IMAGE = "staticbg.colour.mif";
+		defparam VGA.BACKGROUND_IMAGE = "black.mif";
 	 
 	 
 	 
@@ -93,6 +114,7 @@ module drawui (character, // input character value
 	reg [7:0] char_x; // character's x coordinate (top left)
 	reg [7:0] char_y; // character's y coordinate (top left)
 	reg [2:0] char_colour; // character's colour
+	reg [4:0] character;
 	//wire [4:0] character; // character value
 	
 	drawcharacter drawstuff(.CLOCK_50(CLOCK_50), // instantiate main module for drawing characters 
@@ -114,173 +136,198 @@ module drawui (character, // input character value
 				char_x = 8'b00010110; //22
 				char_y = 8'b00000111; //7
 				char_colour = 3'b111;
+				character = LSCORE_1;
 				state = RESET_LSCORE_1;
 			end
 		RESET_LSCORE_1: begin
 				char_x = 8'b00010110; 
 				char_y = 8'b00000111;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_LSCORE_2;
 			end
 		DRAW_LSCORE_2: begin
 				char_x = 8'b00011101; //29
 				char_y = 8'b00000111;
 				char_colour = 3'b111;
+				character = LSCORE_2;
 				state = RESET_LSCORE_2;
 			end
 		RESET_LSCORE_2: begin
 				char_x = 8'b00011101;
 				char_y = 8'b00000111;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_LSCORE_3;
 			end
 		DRAW_LSCORE_3: begin
 				char_x = 8'b00100100; //36
 				char_y = 8'b00000111;
 				char_colour = 3'b111;
+				character = LSCORE_3;
 				state = RESET_LSCORE_3;
 			end
 		RESET_LSCORE_3: begin
 				char_x = 8'b00100100;
 				char_y = 8'b00000111;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_RSCORE_1;
 			end
 		DRAW_RSCORE_1: begin
 				char_x = 8'b10001100; //140
 				char_y = 8'b00000111;
 				char_colour = 3'b111;
+				character = RSCORE_1;
 				state = RESET_RSCORE_1;
 			end
 		RESET_RSCORE_1: begin
 				char_x = 8'b10001100;
 				char_y = 8'b00000111;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_RSCORE_2;
 			end
 		DRAW_RSCORE_2: begin
 				char_x = 8'b10010011; //147
 				char_y = 8'b00000111;
 				char_colour = 3'b111;
+				character = RSCORE_2;
 				state = RESET_RSCORE_2;
 			end
 		RESET_RSCORE_2: begin
 				char_x = 8'b10010011;
 				char_y = 8'b00000111;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_RSCORE_3;
 			end
 		DRAW_RSCORE_3: begin
 				char_x = 8'b10011010; // 154
 				char_y = 8'b00000111;
 				char_colour = 3'b111;
+				character = RSCORE_3;
 				state = RESET_RSCORE_3;
 			end
 		RESET_RSCORE_3: begin
 				char_x = 8'b10011010;
 				char_y = 8'b00000111;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_LCARD_1;
 			end
 		DRAW_LCARD_1: begin
 				char_x = 8'b00010001; // 17
 				char_y = 8'b00110100; // 52
 				char_colour = 3'b111;
+				character = LCARD_1;
 				state = RESET_LCARD_1;
 			end
 		RESET_LCARD_1: begin
 				char_x = 8'b00010001;
 				char_y = 8'b00110100;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_LCARD_2;
 			end
 		DRAW_LCARD_2: begin
 				char_x = 8'b00011000; // 24
 				char_y = 8'b00110100;
 				char_colour = 3'b111;
+				character = LCARD_2;
 				state = RESET_LCARD_2;
 			end
 		RESET_LCARD_2: begin
 				char_x = 8'b00011000;
 				char_y = 8'b00110100;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_RCARD_1;
 			end
 		DRAW_RCARD_1: begin
 				char_x = 8'b10000011; // 131
 				char_y = 8'b00110100;
 				char_colour = 3'b111;
+				character = RCARD_1;
 				state = RESET_RCARD_1;
 			end
 		RESET_RCARD_1: begin
 				char_x = 8'b10000011;
 				char_y = 8'b00110100;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_RCARD_2;
 			end
 		DRAW_RCARD_2: begin
 				char_x = 8'b10001011; // 139
 				char_y = 8'b00110100;
 				char_colour = 3'b111;
+				character = RCARD_2;
 				state = RESET_RCARD_2;
 			end
 		RESET_RCARD_2: begin
 				char_x = 8'b10001011;
 				char_y = 8'b00110100;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_LTOTAL_1;
 			end
 		DRAW_LTOTAL_1: begin
 				char_x = 8'b00010110; // 22
 				char_y = 8'b01101001; // 105
 				char_colour = 3'b111;
+				character = LTOTAL_;
 				state = RESET_LTOTAL_1;
 			end
 		RESET_LTOTAL_1: begin
 				char_x = 8'b00010110;
 				char_y = 8'b01101001;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_LTOTAL_2;
 			end
 		DRAW_LTOTAL_2: begin
 				char_x = 8'b00011101; // 29
 				char_y = 8'b01101001;
 				char_colour = 3'b111;
+				character = LTOTAL_2;
 				state = RESET_LTOTAL_2;
 			end
 		RESET_LTOTAL_2: begin
 				char_x = 8'b00011101;
 				char_y = 8'b01101001;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_RTOTAL_1;
 			end
 		DRAW_RTOTAL_1: begin
 				char_x = 8'b10001011; // 139
 				char_y = 8'b01101001;
 				char_colour = 3'b111;
+				character = RTOTAL_1;
 				state = RESET_RTOTAL_1;
 			end
 		RESET_RTOTAL_1: begin
 				char_x = 8'b10001011;
 				char_y = 8'b01101001;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_RTOTAL_2;
 			end
 		DRAW_RTOTAL_2: begin
 				char_x = 8'b10010010; // 146
 				char_y = 8'b01101001;
 				char_colour = 3'b111;
+				character = RTOTAL_2;
 				state = RESET_RTOTAL_2;
 			end
 		RESET_RTOTAL_2: begin
 				char_x = 8'b10010010;
 				char_y = 8'b01101001;
 				char_colour = 3'b000;
+				character = 5'b01000;
 				state = DRAW_LSCORE_1;
 			end
-		default: begin
-			state = DRAW_LSCORE_1;
-		end
 		endcase
 	 end
 
@@ -293,7 +340,7 @@ module drawcharacter(CLOCK_50, x_coord, y_coord, colour_in, character, x_out, y_
 	input [7:0] x_coord; 
 	input [7:0] y_coord;
 	input [2:0] colour_in;
-	input [3:0] character; // 13 characters -> 13 indexes -> 4 bits
+	input [4:0] character;
 	output reg [7:0] x_out;
 	output reg [6:0] y_out;
 	output [2:0] colour_out;
