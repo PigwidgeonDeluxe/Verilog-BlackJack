@@ -8,7 +8,7 @@ module drawui (LSCORE_1, // input character values
 		LCARD_2,
 		RCARD_1,
 		RCARD_2,
-		LTOTAL_,
+		LTOTAL_1,
 		LTOTAL_2,
 		RTOTAL_1,
 		RTOTAL_2, 
@@ -34,7 +34,7 @@ module drawui (LSCORE_1, // input character values
 	input 	[4:0] LCARD_2;
 	input 	[4:0] RCARD_1;
 	input 	[4:0] RCARD_2;
-	input 	[4:0] LTOTAL_;
+	input 	[4:0] LTOTAL_1;
 	input 	[4:0] LTOTAL_2;
 	input 	[4:0] RTOTAL_1;
 	input 	[4:0] RTOTAL_2 ;
@@ -77,7 +77,7 @@ module drawui (LSCORE_1, // input character values
 		defparam VGA.RESOLUTION = "160x120";
 		defparam VGA.MONOCHROME = "FALSE";
 		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
-		defparam VGA.BACKGROUND_IMAGE = "black.mif";
+		defparam VGA.BACKGROUND_IMAGE = "staticbg.mono.mif";
 	 
 	 
 	 
@@ -276,7 +276,7 @@ module drawui (LSCORE_1, // input character values
 				char_x = 8'b00010110; // 22
 				char_y = 8'b01101001; // 105
 				char_colour = 3'b111;
-				character = LTOTAL_;
+				character = LTOTAL_1;
 				state = RESET_LTOTAL_1;
 			end
 		RESET_LTOTAL_1: begin
