@@ -1,13 +1,13 @@
 module blackjack(SW, KEY, LEDR,HEX1,HEX4,
-		CLOCK_50,//	On Board 50 MHz
-		VGA_CLK,   						//	VGA Clock
-		VGA_HS,							//	VGA H_SYNC
-		VGA_VS,							//	VGA V_SYNC
-		VGA_BLANK_N,						//	VGA BLANK
-		VGA_SYNC_N,						//	VGA SYNC
-		VGA_R,   						//	VGA Red[9:0]
-		VGA_G,	 						//	VGA Green[9:0]
-		VGA_B,   						//	VGA Blue[9:0]
+		CLOCK_50,
+		VGA_CLK,   						
+		VGA_HS,							
+		VGA_VS,							
+		VGA_BLANK_N,						
+		VGA_SYNC_N,						
+		VGA_R,   						
+		VGA_G,	 						
+		VGA_B,   						
 		);
 	// helper function to do conversions****************
 	function [5:0] trunc_7_to_6(input [6:0] val7);
@@ -15,19 +15,18 @@ module blackjack(SW, KEY, LEDR,HEX1,HEX4,
 	endfunction
 	//****************************************************
 	//VGA stuff***********************************************
-	output			VGA_CLK;   				//	VGA Clock
-	output			VGA_HS;					//	VGA H_SYNC
-	output			VGA_VS;					//	VGA V_SYNC
-	output			VGA_BLANK_N;				//	VGA BLANK
-	output			VGA_SYNC_N;				//	VGA SYNC
-	output	[9:0]	VGA_R;   				//	VGA Red[9:0]
-	output	[9:0]	VGA_G;	 				//	VGA Green[9:0]
+	output			VGA_CLK;   				
+	output			VGA_HS;					
+	output			VGA_VS;					
+	output			VGA_BLANK_N;			
+	output			VGA_SYNC_N;				
+	output	[9:0]	VGA_R;   				
+	output	[9:0]	VGA_G;	 				
 	output	[9:0]	VGA_B;  
 	// ******************************************************************
     input [19:0] SW;
     input [4:0] KEY;
     output [9:0] LEDR;
-	 reg [2:0]roundcount = 3'b000;
     wire p1, p2,done,total, clock, resetn, out_light;
 	 reg [3:0]player1card = 1'b0;
 	 reg [4:0]player1total = 5'b00000;
@@ -35,22 +34,19 @@ module blackjack(SW, KEY, LEDR,HEX1,HEX4,
 	 reg [3:0]player2card = 1'b0;
 	 reg [4:0]player2total = 5'b0000;
 	 reg [2:0]player2score = 3'b000;
-	 //reg [6:0]outputcard;
 	 reg [6:0]getcard = 6'b000000;
 	 reg [6:0]getcard2 = 6'b000000;
-    reg [3:0] y_Q, Y_D; // y_Q represents current state, Y_D represents next state
-    reg [5:0] RESET = 5'b000000;
-    localparam A = 4'b0000, B = 4'b0001, C = 4'b0010, D = 4'b0011, E = 4'b0100, F = 4'b0101, G = 4'b0110,H = 4'b0111;
+    reg [3:0] y_Q, Y_D; // borrowing the y_Q as current state and Y_D as next state
+    wire RESET = ~KEY[0];
+    localparam A = 4'b0000, C = 4'b0001, D = 4'b0011,H = 4'b0010, Z = 4'b1000;
     wire [6:0]outputcard;
 	 wire [6:0]outputcard2;
     assign P1 = SW[1];
-	 assign P2 = SW[19];
+	 assign P2 = SW[0];
     assign clock = ~KEY[0];
 	 
 	 output [7:0] HEX1;
 	 output [7:0] HEX4;
-	 
-	 
 	input			CLOCK_50;
 //outside module initiation *****************************************************************************************************
 	drawcard drawacard(
@@ -62,13 +58,14 @@ module blackjack(SW, KEY, LEDR,HEX1,HEX4,
 				.drawncard(outputcard2)
 				);				
 hex_display myhex1(
-					.IN((player2total)),
+					.IN((y_Q)),
 					.OUT(HEX1)
 					);
 hex_display myhex4(
-					.IN((player1total)),
+					.IN((Y_D)),
 					.OUT(HEX4)
 					);
+
 		
 	 drawui display (
 		.LSCORE_1(5'b00000), // input character values
@@ -77,16 +74,15 @@ hex_display myhex4(
 		.RSCORE_1(5'b00000),
 		.RSCORE_2(5'b00000),
 		.RSCORE_3({2'b00,player2score}),
-		.LCARD_1(trunc_7_to_6(player1card/13)),
+		.LCARD_1((trunc_7_to_6(player1card/13))+13),
 		.LCARD_2(trunc_7_to_6(player1card%13)),
-		.RCARD_1(trunc_7_to_6(player2card/13)),
+		.RCARD_1((trunc_7_to_6(player2card/13))+13),
 		.RCARD_2(trunc_7_to_6(player2card%13)),
 		.LTOTAL_1(({1'b0,(player1total/10)})),
 		.LTOTAL_2(({1'b0,(player1total%10)})),
 		.RTOTAL_1(({1'b0,(player2total/10)})),
 		.RTOTAL_2(({1'b0,(player2total%10)})), 
-		.CLOCK_50(CLOCK_50),//	On Board 50 MHz),//	On Board 50 MHz
-		// The ports below are for the VGA output.  Do not change.
+		.CLOCK_50(CLOCK_50),
 		.VGA_R(VGA_R),
 		.VGA_G(VGA_G),
 		.VGA_B(VGA_B),
@@ -99,100 +95,104 @@ hex_display myhex4(
 		);
 //*******************************************************************************************************************************
     //State table
-    //The state table should only contain the logic for state transitions
-    //Do not mix in any output logic. The output logic should be handled separately.
-    //This will make it easier to read, modify and debug the code
     always@(*)
     begin: state_table
         case (y_Q)
 		  // both people will draw one card
+		      Z: begin
+                   if ((P1 == 1) && (P2 == 1)) Y_D = A;
+                   else if ((P1 == 1) && (P2 == 0)) Y_D = C;
+						 else if ((P1 == 0) && (P2 == 1)) Y_D = D;
+						 else Y_D = H;
+            end
             A: begin
-                   if (P1 && P2) Y_D <= A;
-                   else if (P1 && !P2) Y_D <= C;
-						 else if (!P1 && P2) Y_D <= D;
-						 else Y_D <= H;
+                   if ((P1 == 1) && (P2 == 1)) Y_D = A;
+                   else if ((P1 == 1) && (P2 == 0)) Y_D = C;
+						 else if ((P1 == 0) && (P2 == 1)) Y_D = D;
+						 else Y_D = H;
                end
 			// player1 draws
             C:  begin
-                    if (P1) Y_D <= C;
-						 else if (!P1) Y_D <= H;
+                    if (P1) Y_D = C;
+						 else if (~P1) Y_D = H;
                end
 			// player2 draws
             D: begin
-                    if (P2) Y_D <= D;
-						 else if (!P2) Y_D <= H;
+                    if (P2) Y_D = D;
+						 else if (~P2) Y_D = H;
                end
 				H:begin
-						if (~KEY[3])
-							begin
-								Y_D <= A;
-								roundcount = roundcount + 1;
-							end
-				  end
-            default: Y_D = A;
+								Y_D = Z;
+					end
+            default: Y_D = Z;
         endcase
     end // state_table
 	 // state arrangement ***************************************************************
     always @(posedge clock)
     begin: state_FFs
-        if(y_Q == A)
+	     if(y_Q == Z)
+		   begin
+		  player1card = 0;
+		  player2card = 0;
+		  player1total = 0;
+		  player2total = 0;
+		  y_Q = Y_D;
+        end
+		  if(y_Q == A)
 		  begin
 		  //draw 2 cards
-				getcard <= getcard +1;
-				player1card <= outputcard;
-				getcard2 <= getcard2 + 1;
-				player2card <= outputcard2;
-				player1total <= player1total + ({3'b000,player1card} % 13);
-				player2total <= player2total + ({3'b000,player2card} % 13);			
-				RESET <= RESET + 1;
+				getcard = getcard +1;
+				player1card = outputcard;
+				getcard2 = getcard2 + 1;
+				player2card = outputcard2;
+				player1total = player1total + ({3'b000,player1card} % 13);
+				player2total = player2total + ({3'b000,player2card} % 13);			
 				// if both players go over 21 end the game
 				if(player2total > 21 && player1total > 21) begin
-					player1total <= 0;
-					player2total <= 0;
-					y_Q <= H;
+					player1total = 0;
+					player2total = 0;
+					y_Q = H;
 					end
-				else if (player2total > 21) y_Q <= C;
-				else if (player1total > 21) y_Q <= D;
-				else y_Q <= Y_D;
-
+				else if (player2total > 21) y_Q = H;
+				else if (player1total > 21) y_Q = H;
+				else y_Q = Y_D;
 		  end
 		  else if(y_Q == C)
 		  begin
 		  //draw for player 1
-				getcard <= getcard + 1;
-				player1card <= outputcard;
-				player1total <= player1total + ({3'b000,player1card} % 13);
-				RESET <= RESET + 1;
+				getcard = getcard + 1;
+				player1card = outputcard;
+				player1total = player1total + ({3'b000,player1card} % 13);
+				// if player 2 goes over 21
 				if(player1total > 21)begin
-				// if both player1 go over 21 end the game
 					if(player2total <= 21) player2score = player2score + 1;
-					player1total <= 0;
-					player2total <= 0;
-					y_Q <= H;
+					player1total = 0;
+					player2total = 0;
+					y_Q = H;
 				end
-				else y_Q <= Y_D;
+				else y_Q = Y_D;
 		  end
 		  else if(y_Q == D)
 		  begin
 		  //draw for player 2
-				getcard2 <= getcard2 + 1;
-				player2card <= outputcard2;
-				player2total <= player2total + ({3'b000,player2card} % 13);
-				RESET = RESET + 1;
-				// if player 2 goes over 21
+				getcard2 = getcard2 + 1;
+				player2card = outputcard2;
+				player2total = player2total + ({3'b000,player2card} % 13);
+				// if player 1 goes over 21
 				if(player2total > 21)
 				begin
-				if(player1total <= 21) player1score = player1score + 1;
-				player1total <= 0;
-				player2total <= 0;
-				y_Q <= H;
+					if(player1total <= 21) player1score = player1score + 1;
+					player1total = 0;
+					player2total = 0;
+					y_Q = H;
 				end
-				else y_Q <= Y_D;
+				else y_Q = Y_D;
 		  end
 		  else if(y_Q == H)
 		  begin
-		  // NEED AN IF STAEMENT HERE TO CHECK THE TOTALS
-            y_Q <= Y_D;
+		  if(player1total < player2total) player1score = player1score + 1;
+		  if(player2total < player1total) player2score = player2score + 1;
+        y_Q = Y_D;
 		  end
     end // state_FFS
 endmodule
@@ -265,7 +265,7 @@ module drawcard(draw, drawncard);
 	//end
 	
 
-		drawncard <= randomcard[draw];
+		drawncard = randomcard[draw];
 	end
 endmodule
 
@@ -334,7 +334,7 @@ module drawcard2(draw, drawncard);
 	randomcard[51] = 48; // new deck starts after this line
 	//end
 
-		drawncard <= randomcard[draw];
+		drawncard = randomcard[draw];
 	end
 endmodule
 

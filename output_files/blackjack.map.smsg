@@ -1,0 +1,4 @@
+Warning (10268): Verilog HDL information at blackjack.v(101): always construct contains both blocking and non-blocking assignments File: /courses/courses/cscb58w18/lijeff2/BLACKJACK/blackjack.v Line: 101
+Warning (10268): Verilog HDL information at blackjack.v(137): always construct contains both blocking and non-blocking assignments File: /courses/courses/cscb58w18/lijeff2/BLACKJACK/blackjack.v Line: 137
+Warning (10268): Verilog HDL information at blackjack.v(215): always construct contains both blocking and non-blocking assignments File: /courses/courses/cscb58w18/lijeff2/BLACKJACK/blackjack.v Line: 215
+Warning (10268): Verilog HDL information at blackjack.v(285): always construct contains both blocking and non-blocking assignments File: /courses/courses/cscb58w18/lijeff2/BLACKJACK/blackjack.v Line: 285
