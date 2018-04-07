@@ -1,5 +1,6 @@
 # Verilog-BlackJack
 Verilog implementation of a basic two player game of Blackjack
+
 Details in projectplanningupdates.txt
 
 ## a note on drawui.v modules:
