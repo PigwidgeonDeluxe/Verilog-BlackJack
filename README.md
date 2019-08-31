@@ -22,16 +22,11 @@ Details in projectplanningupdates.txt
 -------------
 First Name: Jeff	
 Last Name: L
-Student Number: 
-UofT E-mail Address: 
-
 
 ### Team Member B
 -------------
 First Name: Jeff
 Last Name: X
-Student Number: 
-UofT E-mail Address:
 
 ## Project Details
 ---------------
