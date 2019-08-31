@@ -16,9 +16,9 @@ Details in projectplanningupdates.txt
       -each case would in theory draw each element of that part of the GUI (NOTE: it may be necessary to split apart the components of a single case so that we dont accidentally set more than one value for x and y per state - depends on how verilog works, dont know)
 
 
-##CSCB58 Project File: Summer 2017
+## CSCB58 Project File: Summer 2017
 
-###Team Member A
+### Team Member A
 -------------
 First Name: Jeff	
 Last Name: L
@@ -26,14 +26,14 @@ Student Number:
 UofT E-mail Address: 
 
 
-###Team Member B
+### Team Member B
 -------------
 First Name: Jeff
 Last Name: X
 Student Number: 
 UofT E-mail Address:
 
-##Project Details
+## Project Details
 ---------------
 Project Title: Two player blackjack
 
@@ -68,7 +68,7 @@ Code URL (please upload a copy of this file to your repository at the end of the
 serve as a useful resource for future development):
 https://github.com/PigwidgeonDeluxe/Verilog-BlackJack
 
-##Proposal
+## Proposal
 --------
 
 What do you plan to have completed by the end of the first lab session?:
@@ -96,7 +96,7 @@ then we will plan to cut some elements from the VGA board and then display the n
 If the back end cannot work properly we may have to create a simpler game where players compete against each other with the highest card face value.
 What hardware will you need beyond the DE2 board
 VGA monitor
-##Motivations
+## Motivations
 -----------
 How does this project relate to the material covered in CSCB58?:
 This project will demonstrate good usage and understanding of materials taught in class such as adders, registers, and flip-flops, including being able to create a good FSM
@@ -105,12 +105,12 @@ Why is this project interesting/cool (for CSCB58 students, and for non CSCB58 st
 It is interesting because it implements pseudo-randomness to this project and graphics that no one else seems to have done too much of.
 Why did you personally choose this project?:
 This projects seems to be of optimal difficulty but will be really compelling to complete as it feels like a really fun proeject to 
-##Attributions
+## Attributions
 ------------
 Provide a complete list of any external resources your project used (attributions should also be included in your
 code).  
 
-##Updates
+## Updates
 -------
 
 <Example update. Delte this and add your own updates after each lab session>
